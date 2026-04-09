@@ -9,7 +9,7 @@
 * **Backend:** Node.js (Express.js)
 * **Database:** PostgreSQL with Prisma ORM
 
-## ⚠️ STRICT AI WORKFLOW INSTRUCTIONS ⚠️
+## ⚠️ STRICT WORKFLOW INSTRUCTIONS ⚠️
 1. **Incremental Development:** Work part by part, feature by feature.
 2. **Halt and Wait:** After completing a feature, STOP and wait for testing.
 3. **Explicit Permission Required:** Do NOT proceed until the User explicitly asks.

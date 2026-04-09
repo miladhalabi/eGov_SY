@@ -30,12 +30,11 @@
 
 ## Current Status Log
 
-**[Step 6.5: Master Registry & Workflow Logic Completed]**
-* **Individual Record:** Refactored to pull data from the `CivilRecord` (Master Registry) table instead of `User`.
-* **Global Search:** Employees can now query and generate PDFs for any citizen using their National ID.
-* **Marital Birth Logic:** Citizens must select an active spouse from a dynamic dropdown before registering a birth.
-* **Auto-Civil Creation:** Approving a birth now automatically generates a new National ID and creates a legal identity in the registry for the child.
-* **Fixes:** Resolved all backend file path errors and frontend JSX syntax crashes.
+**[Step 6.75: Reject with Reason Workflow]**
+* **Employee Feature:** Government employees now have a "Reject" option for both Birth and Marriage requests.
+* **Reason Tracking:** Rejections require a mandatory reason, which is saved in the database.
+* **Citizen Feedback:** Citizens are notified of rejections and can view the specific reason in their "My Requests" log.
+* **Data Integration:** Unified the citizen requests view to show both Birth and Marriage history in a single table.
 
 **How to Test:**
 1. **Citizen Path:**

@@ -45,10 +45,28 @@ function EmployeeQueue() {
     } catch (e) { alert('خطأ'); }
   };
 
+  const rejectBirth = async (id) => {
+    const reason = window.prompt('يرجى إدخال سبب الرفض:');
+    if (!reason) return;
+    try {
+      await axios.post('http://localhost:5000/api/civil/reject-birth', { registrationId: id, reason }, { headers: { Authorization: `Bearer ${token}` } });
+      fetchData();
+    } catch (e) { alert('خطأ'); }
+  };
+
   const approveMarriage = async (id) => {
     if (!window.confirm('موافقة على تثبيت الزواج؟')) return;
     try {
       await axios.post('http://localhost:5000/api/civil/approve-marriage', { requestId: id }, { headers: { Authorization: `Bearer ${token}` } });
+      fetchData();
+    } catch (e) { alert('خطأ'); }
+  };
+
+  const rejectMarriage = async (id) => {
+    const reason = window.prompt('يرجى إدخال سبب الرفض:');
+    if (!reason) return;
+    try {
+      await axios.post('http://localhost:5000/api/civil/reject-marriage', { requestId: id, reason }, { headers: { Authorization: `Bearer ${token}` } });
       fetchData();
     } catch (e) { alert('خطأ'); }
   };
@@ -62,19 +80,20 @@ function EmployeeQueue() {
         <h3 className="text-xl font-bold text-gov-secondary border-r-4 border-gov-primary pr-4">طلبات تسجيل الزواج ({marriages.length})</h3>
         <div className="grid grid-cols-1 gap-4">
           {marriages.map((m) => (
-            <div key={m.id} className="gov-card p-6 flex justify-between items-center bg-blue-50/30">
-              <div>
+            <div key={m.id} className="gov-card p-6 flex flex-col md:flex-row justify-between items-center gap-6 bg-blue-50/30">
+              <div className="flex-grow">
                 <p className="text-xs text-gov-primary font-bold">المقدم: {m.initiator?.fullName || 'غير معروف'}</p>
                 <h4 className="font-bold text-gov-secondary text-lg">الطرف الآخر: {m.partnerNationalId}</h4>
-                <p className="text-xs text-gray-400">رقم العقد: {m.contractNumber}</p>
+                <p className="text-xs text-gray-400 font-mono">رقم العقد: {m.contractNumber}</p>
               </div>
               <div className="flex gap-3">
-                 <a href={`http://localhost:5000/${m.documentPath}`} target="_blank" className="px-4 py-2 border border-gov-secondary rounded-lg text-sm font-bold">وثيقة العقد</a>
-                 <button onClick={() => approveMarriage(m.id)} className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-lg font-bold">تثبيت الزواج</button>
+                 <a href={`http://localhost:5000/${m.documentPath}`} target="_blank" rel="noreferrer" className="px-4 py-2 border border-gov-secondary rounded-lg text-sm font-bold hover:bg-gov-secondary hover:text-white transition-all">وثيقة العقد</a>
+                 <button onClick={() => approveMarriage(m.id)} className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-lg font-bold hover:brightness-125 transition-all">موافقة</button>
+                 <button onClick={() => rejectMarriage(m.id)} className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold border border-red-200 hover:bg-red-100 transition-all">رفض</button>
               </div>
             </div>
           ))}
-          {marriages.length === 0 && <p className="text-center text-gray-400 py-10 gov-card">لا يوجد طلبات زواج</p>}
+          {marriages.length === 0 && <p className="text-center text-gray-400 py-10 gov-card bg-white/50 border-dashed">لا يوجد طلبات زواج معلقة حالياً</p>}
         </div>
       </section>
 
@@ -83,18 +102,20 @@ function EmployeeQueue() {
         <h3 className="text-xl font-bold text-gov-secondary border-r-4 border-gov-primary pr-4">طلبات تسجيل الولادة ({births.length})</h3>
         <div className="grid grid-cols-1 gap-4">
           {births.map((b) => (
-            <div key={b.id} className="gov-card p-6 flex justify-between items-center">
-              <div>
+            <div key={b.id} className="gov-card p-6 flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="flex-grow">
                 <p className="text-xs text-gov-primary font-bold">المقدم: {b.citizenRequest?.citizen?.fullName || 'غير معروف'}</p>
                 <h4 className="font-bold text-gov-secondary text-lg">المولود: {b.childName} ({b.childGender})</h4>
+                <p className="text-[10px] text-gray-400">تاريخ الطلب: {new Date(b.createdAt).toLocaleString('ar-SY')}</p>
               </div>
               <div className="flex gap-3">
-                 <a href={`http://localhost:5000/${b.hospitalDoc}`} target="_blank" className="px-4 py-2 border border-gov-secondary rounded-lg text-sm font-bold">عرض الشهادة</a>
-                 <button onClick={() => approveBirth(b.id)} className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-lg font-bold">موافقة</button>
+                 <a href={`http://localhost:5000/${b.hospitalDoc}`} target="_blank" rel="noreferrer" className="px-4 py-2 border border-gov-secondary rounded-lg text-sm font-bold hover:bg-gov-secondary hover:text-white transition-all">عرض الشهادة</a>
+                 <button onClick={() => approveBirth(b.id)} className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-lg font-bold hover:brightness-125 transition-all">موافقة</button>
+                 <button onClick={() => rejectBirth(b.id)} className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold border border-red-200 hover:bg-red-100 transition-all">رفض</button>
               </div>
             </div>
           ))}
-          {births.length === 0 && <p className="text-center text-gray-400 py-10 gov-card">لا يوجد طلبات ولادة</p>}
+          {births.length === 0 && <p className="text-center text-gray-400 py-10 gov-card bg-white/50 border-dashed">لا يوجد طلبات ولادة معلقة حالياً</p>}
         </div>
       </section>
     </div>

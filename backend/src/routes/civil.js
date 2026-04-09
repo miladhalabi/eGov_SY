@@ -5,9 +5,11 @@ import {
   registerBirth, 
   getPendingBirths, 
   approveBirth,
+  rejectBirth,
   registerMarriage,
   getPendingMarriages,
-  approveMarriage
+  approveMarriage,
+  rejectMarriage
 } from '../controllers/civilController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { upload } from '../middleware/uploadMiddleware.js';
@@ -23,7 +25,9 @@ router.post('/register-marriage', authenticate, upload.single('document'), regis
 // Employee routes
 router.get('/pending-births', authenticate, getPendingBirths);
 router.post('/approve-birth', authenticate, approveBirth);
+router.post('/reject-birth', authenticate, rejectBirth);
 router.get('/pending-marriages', authenticate, getPendingMarriages);
 router.post('/approve-marriage', authenticate, approveMarriage);
+router.post('/reject-marriage', authenticate, rejectMarriage);
 
 export default router;

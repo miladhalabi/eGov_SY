@@ -17,18 +17,35 @@ export const getMyRequests = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    // 2. Format them for a unified view
+    // 2. Get Marriage Requests
+    const marriages = await prisma.marriageRequest.findMany({
+      where: { initiatorId: userId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // 3. Format them for a unified view
     const formattedBirths = births.map(b => ({
       id: b.id,
       service: 'تسجيل ولادة',
       details: `المولود: ${b.childName}`,
       status: b.status,
+      reason: b.rejectionReason,
       date: b.createdAt
     }));
 
-    // Future: Add vehicle transfers, tax applications, etc.
+    const formattedMarriages = marriages.map(m => ({
+      id: m.id,
+      service: 'تسجيل زواج',
+      details: `الطرف الآخر: ${m.partnerNationalId}`,
+      status: m.status,
+      reason: m.rejectionReason,
+      date: m.createdAt
+    }));
+
+    // Combine and sort by date
+    const allRequests = [...formattedBirths, ...formattedMarriages].sort((a, b) => new Date(b.date) - new Date(a.date));
     
-    res.json(formattedBirths);
+    res.json(allRequests);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'حدث خطأ أثناء جلب الطلبات' });

@@ -26,13 +26,13 @@ function MyRequests({ onBack }) {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'PENDING':
-        return <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">قيد المراجعة</span>;
+        return <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-[10px] font-bold">قيد المراجعة</span>;
       case 'APPROVED':
-        return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">مكتمل</span>;
+        return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold">مكتمل</span>;
       case 'REJECTED':
-        return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">مرفوض</span>;
+        return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-bold">مرفوض</span>;
       default:
-        return <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-bold">{status}</span>;
+        return <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-[10px] font-bold">{status}</span>;
     }
   };
 
@@ -61,28 +61,32 @@ function MyRequests({ onBack }) {
         </div>
       ) : (
         <div className="gov-card overflow-hidden">
-          <table className="w-full text-right border-collapse">
-            <thead>
-              <tr className="bg-gov-secondary text-gov-primary text-sm uppercase tracking-widest">
-                <th className="p-6">رقم الطلب</th>
-                <th className="p-6">الخدمة</th>
-                <th className="p-6">التفاصيل</th>
-                <th className="p-6">تاريخ التقديم</th>
-                <th className="p-6">الحالة</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {requests.map((req) => (
-                <tr key={req.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="p-6 text-xs font-mono text-gray-400">{req.id.substring(0, 8)}...</td>
-                  <td className="p-6 font-bold text-gov-secondary">{req.service}</td>
-                  <td className="p-6 text-sm text-gray-600">{req.details}</td>
-                  <td className="p-6 text-sm text-gray-500">{new Date(req.date).toLocaleDateString('ar-SY')}</td>
-                  <td className="p-6">{getStatusBadge(req.status)}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-right border-collapse">
+              <thead>
+                <tr className="bg-gov-secondary text-gov-primary text-xs uppercase tracking-widest">
+                  <th className="p-6">الخدمة</th>
+                  <th className="p-6">التفاصيل</th>
+                  <th className="p-6 text-center">الحالة</th>
+                  <th className="p-6">تاريخ التقديم</th>
+                  <th className="p-6">ملاحظات</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {requests.map((req) => (
+                  <tr key={req.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="p-6 font-bold text-gov-secondary">{req.service}</td>
+                    <td className="p-6 text-sm text-gray-600 leading-relaxed">{req.details}</td>
+                    <td className="p-6 text-center">{getStatusBadge(req.status)}</td>
+                    <td className="p-6 text-xs text-gray-500 font-mono">{new Date(req.date).toLocaleDateString('ar-SY')}</td>
+                    <td className="p-6 text-xs text-red-500 max-w-xs italic">
+                      {req.status === 'REJECTED' && req.reason ? req.reason : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

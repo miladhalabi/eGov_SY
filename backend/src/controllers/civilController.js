@@ -216,6 +216,34 @@ export const approveBirth = async (req, res) => {
   }
 };
 
+export const rejectBirth = async (req, res) => {
+  const { registrationId, reason } = req.body;
+  if (req.user.role !== 'EMPLOYEE') return res.status(403).json({ error: 'غير مسموح' });
+
+  try {
+    const registration = await prisma.birthRegistration.update({
+      where: { id: registrationId },
+      data: { status: 'REJECTED', rejectionReason: reason },
+      include: { citizenRequest: true }
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: registration.citizenRequest.citizenId,
+        title: 'تم رفض طلب تسجيل الولادة',
+        message: `تم رفض طلبك للسبب التالي: ${reason}`
+      }
+    });
+
+    const io = getIO();
+    io.to(`user_${registration.citizenRequest.citizenId}`).emit('new_notification', { title: 'تحديث بخصوص طلبك' });
+
+    res.json({ message: 'تم رفض الطلب بنجاح' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطأ في الخادم' });
+  }
+};
+
 // --- Marriage Logic ---
 
 export const registerMarriage = async (req, res) => {
@@ -340,5 +368,32 @@ export const approveMarriage = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'حدث خطأ' });
+  }
+};
+
+export const rejectMarriage = async (req, res) => {
+  const { requestId, reason } = req.body;
+  if (req.user.role !== 'EMPLOYEE') return res.status(403).json({ error: 'غير مسموح' });
+
+  try {
+    const request = await prisma.marriageRequest.update({
+      where: { id: requestId },
+      data: { status: 'REJECTED', rejectionReason: reason }
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: request.initiatorId,
+        title: 'تم رفض طلب تسجيل الزواج',
+        message: `تم رفض طلبك للسبب التالي: ${reason}`
+      }
+    });
+
+    const io = getIO();
+    io.to(`user_${request.initiatorId}`).emit('new_notification', { title: 'تحديث بخصوص طلب الزواج' });
+
+    res.json({ message: 'تم رفض الطلب بنجاح' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطأ' });
   }
 };

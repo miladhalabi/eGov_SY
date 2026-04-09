@@ -94,10 +94,12 @@ model MarriageRequest {
   contractNumber    String
   documentPath      String
   status            RegistrationStatus @default(PENDING)
+  rejectionReason   String?
   approvedBy        String?
-  approver          User?              @relation("EmployeeMarriageApprovals", fields: [approvedBy], references: [id])
+  approver       User?              @relation("EmployeeMarriageApprovals", fields: [approvedBy], references: [id])
   createdAt         DateTime           @default(now())
 }
+
 
 model MarriageRecord {
   id             String      @id @default(uuid())
@@ -116,6 +118,7 @@ model BirthRegistration {
   childGender    String
   hospitalDoc    String             // Path to uploaded image
   status         RegistrationStatus @default(PENDING)
+  rejectionReason String?
   approvedBy     String?
   approver       User?              @relation("EmployeeApprovals", fields: [approvedBy], references: [id])
   createdAt      DateTime           @default(now())

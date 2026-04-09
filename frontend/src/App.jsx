@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from './store/authStore'
 import { useSocketStore } from './store/socketStore'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import axios from 'axios'
 import BirthRegistrationForm from './components/BirthRegistrationForm'
+import MarriageRegistrationForm from './components/MarriageRegistrationForm'
 import EmployeeQueue from './components/EmployeeQueue'
 import MyRequests from './pages/MyRequests'
 import NotificationBell from './components/NotificationBell'
@@ -12,7 +14,7 @@ function App() {
   const { user, token, logout } = useAuthStore()
   const { connect, disconnect } = useSocketStore()
   const [activeCategory, setActiveCategory] = useState(null)
-  const [view, setView] = useState('DASHBOARD');
+  const [view, setView] = useState('DASHBOARD'); // DASHBOARD, REQUESTS, REGISTER
 
   useEffect(() => {
     if (token) {
@@ -42,7 +44,10 @@ function App() {
   };
 
   if (!user) {
-    return <Login />
+    if (view === 'REGISTER') {
+       return <Register onBack={() => setView('DASHBOARD')} />
+    }
+    return <Login onRegister={() => setView('REGISTER')} />
   }
 
   const categories = [
@@ -122,14 +127,13 @@ function App() {
         </div>
       </nav>
 
-      {/* Main Content Area */}
       <main className="flex-grow max-w-7xl mx-auto w-full px-6 py-12">
         
         {user.role === 'EMPLOYEE' ? (
           <div className="space-y-12">
             <header className="mb-12">
               <h2 className="text-3xl font-bold text-gov-secondary mb-2">منصة الموظف الحكومي</h2>
-              <p className="text-gray-500">مرحباً {user.fullName}. لديك صلاحيات مراجعة واعتماد الطلبات المقدمة.</p>
+              <p className="text-gray-500">مرحباً {user.fullName}. صلاحيات مراجعة السجلات المدنية والطلبات.</p>
             </header>
             <EmployeeQueue />
           </div>
@@ -137,67 +141,57 @@ function App() {
           <MyRequests onBack={() => setView('DASHBOARD')} />
         ) : (
           <div className="space-y-12">
-            {/* Category Grid or Detail View */}
             {!activeCategory ? (
               <>
                 <header className="mb-12">
                   <h2 className="text-3xl font-bold text-gov-secondary mb-2">لوحة التحكم الرئيسية</h2>
-                  <p className="text-gray-500">أهلاً بك في نظام الخدمات الموحد. يرجى اختيار القسم المطلوب للمتابعة.</p>
+                  <p className="text-gray-500">اختر القسم المطلوب للمتابعة.</p>
                 </header>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   {categories.map((cat) => (
-                    <div key={cat.id} onClick={() => setActiveCategory(cat.id)} className="gov-card p-10 flex flex-col items-center text-center cursor-pointer hover:scale-[1.03] transition-all hover:shadow-2xl group border-b-8 border-transparent hover:border-gov-primary">
-                      <div className="bg-gov-secondary text-gov-primary p-6 rounded-3xl mb-6 group-hover:bg-gov-primary group-hover:text-gov-secondary transition-colors shadow-lg">
-                        {cat.icon}
-                      </div>
+                    <div key={cat.id} onClick={() => setActiveCategory(cat.id)} className="gov-card p-10 flex flex-col items-center text-center cursor-pointer hover:scale-[1.03] transition-all group border-b-8 border-transparent hover:border-gov-primary">
+                      <div className="bg-gov-secondary text-gov-primary p-6 rounded-3xl mb-6 shadow-lg">{cat.icon}</div>
                       <h3 className="text-2xl font-bold text-gov-secondary mb-3">{cat.name}</h3>
-                      <p className="text-sm text-gray-500 leading-relaxed">{cat.description}</p>
+                      <p className="text-sm text-gray-500">{cat.description}</p>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
               <div className="animate-fade-in space-y-10">
-                <button onClick={() => setActiveCategory(null)} className="flex items-center gap-2 text-gov-secondary font-bold hover:text-gov-primary transition-colors">
+                <button onClick={() => setActiveCategory(null)} className="flex items-center gap-2 text-gov-secondary font-bold">
                   <svg className="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                   العودة للأقسام
                 </button>
 
                 {activeCategory === 'CIVIL' && (
-                  <div className="space-y-10">
+                  <div className="space-y-12">
                     <header>
                       <h2 className="text-4xl font-bold text-gov-secondary mb-2">قسم الشؤون المدنية</h2>
                     </header>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                        <div className="gov-card p-10 border-r-8 border-gov-primary cursor-pointer" onClick={downloadRecord}>
                           <h4 className="text-2xl font-bold text-gov-secondary mb-3">إخراج قيد فردي</h4>
-                          <p className="text-gray-500 text-sm mb-6">تحميل الوثيقة بصيغة PDF.</p>
+                          <p className="text-gray-500 text-sm mb-6">تحميل وثيقة القيد المدني الفردي.</p>
                           <span className="text-gov-primary font-bold">تحميل الآن ↓</span>
                        </div>
                        <div className="gov-card p-10 bg-gov-secondary text-white relative overflow-hidden">
                          <div className="relative z-10">
                             <h4 className="text-gov-primary text-2xl font-bold mb-3">دليل الخدمات</h4>
-                            <p className="text-gray-300 text-sm">الوثائق معتمدة رسمياً لدى كافة الدوائر الحكومية.</p>
+                            <p className="text-gray-300 text-sm">الوثائق معتمدة رسمياً.</p>
                          </div>
                        </div>
                     </div>
-                    <BirthRegistrationForm />
+                    
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+                      <MarriageRegistrationForm />
+                      <BirthRegistrationForm />
+                    </div>
                   </div>
                 )}
 
-                {activeCategory === 'TRAFFIC' && (
-                   <div className="gov-card p-20 text-center">
-                      <h2 className="text-2xl font-bold text-gov-secondary">قسم المرور والنقل</h2>
-                      <p className="text-gray-500">قيد التطوير...</p>
-                   </div>
-                )}
-                
-                {activeCategory === 'TAX' && (
-                   <div className="gov-card p-20 text-center">
-                      <h2 className="text-2xl font-bold text-gov-secondary">الخدمات المالية</h2>
-                      <p className="text-gray-500">قيد التطوير...</p>
-                   </div>
-                )}
+                {activeCategory === 'TRAFFIC' && <div className="gov-card p-20 text-center"><h2 className="text-2xl">المرور قيد التطوير...</h2></div>}
+                {activeCategory === 'TAX' && <div className="gov-card p-20 text-center"><h2 className="text-2xl">المالية قيد التطوير...</h2></div>}
               </div>
             )}
           </div>
@@ -205,9 +199,7 @@ function App() {
       </main>
 
       <footer className="bg-white/50 border-t border-gray-200 py-10 px-6 text-center mt-auto">
-        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">
-          نظام الحكومة الإلكترونية الموحد © 2026
-        </p>
+        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">نظام الحكومة الإلكترونية الموحد © 2026</p>
       </footer>
     </div>
   )

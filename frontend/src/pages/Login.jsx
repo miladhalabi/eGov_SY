@@ -2,7 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-function Login() {
+function Login({ onRegister }) {
   const [nationalId, setNationalId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -94,6 +94,15 @@ function Login() {
                     جاري التحقق...
                   </span>
                 ) : 'دخول للمنصة'}
+              </button>
+            </div>
+            <div className="pt-2 text-center">
+              <button 
+                type="button" 
+                onClick={onRegister}
+                className="text-sm font-bold text-gray-400 hover:text-gov-secondary transition-colors"
+              >
+                لا تملك حساب؟ تفعيل حساب مواطن جديد
               </button>
             </div>
           </form>

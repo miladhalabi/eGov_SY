@@ -4,17 +4,20 @@ import { useAuthStore } from '../store/authStore';
 import { useSocketStore } from '../store/socketStore';
 
 function EmployeeQueue() {
-  const [requests, setRequests] = useState([]);
+  const [births, setBirths] = useState([]);
+  const [marriages, setMarriages] = useState([]);
   const [loading, setLoading] = useState(true);
   const token = useAuthStore((state) => state.token);
   const socket = useSocketStore((state) => state.socket);
 
-  const fetchRequests = async () => {
+  const fetchData = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/civil/pending-births', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setRequests(response.data);
+      const [birthRes, marriageRes] = await Promise.all([
+        axios.get('http://localhost:5000/api/civil/pending-births', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('http://localhost:5000/api/civil/pending-marriages', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      setBirths(birthRes.data);
+      setMarriages(marriageRes.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -22,74 +25,78 @@ function EmployeeQueue() {
     }
   };
 
-  useEffect(() => {
-    fetchRequests();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  // Real-time listener
   useEffect(() => {
     if (!socket) return;
-
-    socket.on('new_birth_request', (newRequest) => {
-      setRequests(prev => [newRequest, ...prev]);
-    });
-
+    socket.on('new_birth_request', (req) => setBirths(prev => [req, ...prev]));
+    socket.on('new_marriage_request', (req) => setMarriages(prev => [req, ...prev]));
     return () => {
       socket.off('new_birth_request');
+      socket.off('new_marriage_request');
     };
   }, [socket]);
 
-  const approve = async (id) => {
-    if (!window.confirm('هل أنت متأكد من الموافقة على هذا الطلب؟')) return;
-    
+  const approveBirth = async (id) => {
+    if (!window.confirm('موافقة على الولادة؟')) return;
     try {
-      await axios.post('http://localhost:5000/api/civil/approve-birth', { registrationId: id }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchRequests();
-    } catch (error) {
-      alert('حدث خطأ أثناء الموافقة');
-    }
+      await axios.post('http://localhost:5000/api/civil/approve-birth', { registrationId: id }, { headers: { Authorization: `Bearer ${token}` } });
+      fetchData();
+    } catch (e) { alert('خطأ'); }
   };
 
-  if (loading) return <div className="text-center p-10">جاري تحميل الطلبات...</div>;
+  const approveMarriage = async (id) => {
+    if (!window.confirm('موافقة على تثبيت الزواج؟')) return;
+    try {
+      await axios.post('http://localhost:5000/api/civil/approve-marriage', { requestId: id }, { headers: { Authorization: `Bearer ${token}` } });
+      fetchData();
+    } catch (e) { alert('خطأ'); }
+  };
+
+  if (loading) return <div className="text-center p-10">جاري التحميل...</div>;
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-xl font-bold text-gov-secondary border-r-4 border-gov-primary pr-4">طلبات تسجيل الولادة المعلقة</h3>
-      
-      {requests.length === 0 ? (
-        <div className="gov-card p-10 text-center text-gray-500">لا توجد طلبات معلقة حالياً</div>
-      ) : (
+    <div className="space-y-12">
+      {/* Marriages Queue */}
+      <section className="space-y-6">
+        <h3 className="text-xl font-bold text-gov-secondary border-r-4 border-gov-primary pr-4">طلبات تسجيل الزواج ({marriages.length})</h3>
         <div className="grid grid-cols-1 gap-4">
-          {requests.map((req) => (
-            <div key={req.id} className="gov-card p-6 flex flex-col md:flex-row justify-between items-center gap-6">
-              <div className="flex-grow">
-                <p className="text-xs text-gov-primary font-bold mb-1 uppercase tracking-tighter">مقدم الطلب: {req.citizenRequest.citizen.fullName}</p>
-                <h4 className="text-lg font-bold text-gov-secondary">اسم المولود: {req.childName} ({req.childGender})</h4>
-                <p className="text-xs text-gray-400">تاريخ الطلب: {new Date(req.createdAt).toLocaleString('ar-SY')}</p>
+          {marriages.map((m) => (
+            <div key={m.id} className="gov-card p-6 flex justify-between items-center bg-blue-50/30">
+              <div>
+                <p className="text-xs text-gov-primary font-bold">المقدم: {m.initiator.fullName}</p>
+                <h4 className="font-bold text-gov-secondary text-lg">الطرف الآخر: {m.partnerNationalId}</h4>
+                <p className="text-xs text-gray-400">رقم العقد: {m.contractNumber}</p>
               </div>
-              
               <div className="flex gap-3">
-                <a 
-                  href={`http://localhost:5000/${req.hospitalDoc}`} 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="px-4 py-2 border border-gov-secondary text-gov-secondary rounded-lg text-sm font-bold hover:bg-gov-secondary hover:text-white transition-all"
-                >
-                  عرض الوثيقة
-                </a>
-                <button 
-                  onClick={() => approve(req.id)}
-                  className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-lg text-sm font-bold hover:brightness-125 transition-all"
-                >
-                  موافقة
-                </button>
+                 <a href={`http://localhost:5000/${m.documentPath}`} target="_blank" className="px-4 py-2 border border-gov-secondary rounded-lg text-sm font-bold">وثيقة العقد</a>
+                 <button onClick={() => approveMarriage(m.id)} className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-lg font-bold">تثبيت الزواج</button>
               </div>
             </div>
           ))}
+          {marriages.length === 0 && <p className="text-center text-gray-400 py-10 gov-card">لا يوجد طلبات زواج</p>}
         </div>
-      )}
+      </section>
+
+      {/* Births Queue */}
+      <section className="space-y-6">
+        <h3 className="text-xl font-bold text-gov-secondary border-r-4 border-gov-primary pr-4">طلبات تسجيل الولادة ({births.length})</h3>
+        <div className="grid grid-cols-1 gap-4">
+          {births.map((b) => (
+            <div key={b.id} className="gov-card p-6 flex justify-between items-center">
+              <div>
+                <p className="text-xs text-gov-primary font-bold">المقدم: {b.citizenRequest.citizen.fullName}</p>
+                <h4 className="font-bold text-gov-secondary text-lg">المولود: {b.childName} ({b.childGender})</h4>
+              </div>
+              <div className="flex gap-3">
+                 <a href={`http://localhost:5000/${b.hospitalDoc}`} target="_blank" className="px-4 py-2 border border-gov-secondary rounded-lg text-sm font-bold">عرض الشهادة</a>
+                 <button onClick={() => approveBirth(b.id)} className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-lg font-bold">موافقة</button>
+              </div>
+            </div>
+          ))}
+          {births.length === 0 && <p className="text-center text-gray-400 py-10 gov-card">لا يوجد طلبات ولادة</p>}
+        </div>
+      </section>
     </div>
   );
 }

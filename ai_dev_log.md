@@ -30,16 +30,17 @@
 
 ## Current Status Log
 
-**[Step 5.75 Completed: Real-Time Engine (Socket.IO)]**
-* **Status:** Instant push notifications and real-time UI updates implemented.
+**[Step 6 Completed: Robust Identity & Marriage Logic]**
+* **Status:** Government-grade identity verification and relational constraints implemented.
 * **Backend:**
-    * Integrated `socket.io` with the Express HTTP server.
-    * Implemented custom socket middleware for JWT authentication.
-    * Added logic to "Room" users based on Role (`employee_room`) and ID (`user_ID`).
+    * **Registry Pattern:** Implemented a "Master Civil Registry" (CivilRecord) separated from "Portal Users" (User).
+    * **Identity Verification:** `POST /api/auth/register` now matches inputs against the master registry.
+    * **Marriage Constraints:** Implemented logic for 1 husband (wife) and max 4 wives (husband).
+    * **Gated Services:** Birth registration now strictly requires an active MarriageRecord.
 * **Frontend:**
-    * Created `socketStore` for managing the global WebSocket connection.
-    * Connected `EmployeeQueue` to listen for new birth registrations in real-time.
-    * Connected `NotificationBell` to listen for personal alerts in real-time.
+    * **Register Page:** Identity-check signup flow.
+    * **Marriage Service:** Real-time request and document upload.
+    * **Employee Portal:** Unified approval queue for all civil events.
 
 **How to Test:**
 1. **Citizen Path:**

@@ -9,6 +9,7 @@ import MarriageRegistrationForm from './components/MarriageRegistrationForm'
 import EmployeeQueue from './components/EmployeeQueue'
 import MyRequests from './pages/MyRequests'
 import NotificationBell from './components/NotificationBell'
+import logo from './assets/logo.svg'
 
 function App() {
   const { user, token, logout } = useAuthStore()
@@ -89,10 +90,8 @@ function App() {
       <nav className="bg-gov-secondary text-white shadow-2xl border-b-4 border-gov-primary sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <div className="bg-gov-primary p-2 rounded-lg cursor-pointer" onClick={() => {setView('DASHBOARD'); setActiveCategory(null);}}>
-               <svg className="w-6 h-6 text-gov-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-               </svg>
+            <div className="cursor-pointer transition-transform hover:scale-110" onClick={() => {setView('DASHBOARD'); setActiveCategory(null);}}>
+               <img src={logo} alt="Logo" className="w-12 h-12 drop-shadow-md" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-gov-primary leading-tight">بوابة الحكومة الإلكترونية</h1>

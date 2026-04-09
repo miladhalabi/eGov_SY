@@ -16,13 +16,23 @@
     --gov-bg: #edebe0;
   }
   
-  body {
-    @apply bg-gov-bg text-gov-secondary antialiased;
-    font-family: 'GESS', system-ui, -apple-system, sans-serif;
+  /* Force GESS font globally on all elements */
+  * {
+    font-family: 'GESS', system-ui, sans-serif !important;
   }
 
-  h1, h2, h3, h4, .gov-heading {
-    font-family: 'GESS', serif;
+  body {
+    @apply bg-gov-bg text-gov-secondary antialiased;
+  }
+
+  /* Target form elements specifically as browsers often override them */
+  input, button, select, textarea, optgroup {
+    font-family: 'GESS', system-ui, sans-serif !important;
+  }
+
+  /* The specific class to handle standard numerals (re-applying it here after the global * rule) */
+  .english-nums {
+    font-family: system-ui, -apple-system, sans-serif !important;
   }
 }
 
@@ -40,10 +50,6 @@
   .gov-input {
     @apply w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none 
            focus:ring-2 focus:ring-gov-primary focus:bg-white transition-all text-right;
-  }
-
-  .english-nums {
-    font-family: system-ui, -apple-system, sans-serif !important;
   }
 }
 

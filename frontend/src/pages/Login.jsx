@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import logo from '../assets/logo.svg';
 
 function Login({ onRegister }) {
   const [nationalId, setNationalId] = useState('');
@@ -33,11 +34,8 @@ function Login({ onRegister }) {
       <div className="w-full max-w-lg">
         {/* Logo / Title Area */}
         <div className="text-center mb-10">
-          <div className="inline-block p-4 rounded-3xl bg-gov-secondary shadow-2xl mb-4 border-b-4 border-gov-primary">
-            <svg className="w-16 h-16 text-gov-primary" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 2a1 1 0 00-1 1v1.258a7.979 7.979 0 00-5.165 4.583 1 1 0 101.873.708 5.978 5.978 0 018.584 0 1 1 0 001.873-.708A7.979 7.979 0 0011 4.258V3a1 1 0 00-1-1zM5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
-              <path d="M7 13a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" />
-            </svg>
+          <div className="inline-block mb-4 transition-transform hover:scale-110 duration-500">
+            <img src={logo} alt="Syria E-Gov Logo" className="w-24 h-24 drop-shadow-2xl" />
           </div>
           <h1 className="text-3xl font-bold text-gov-secondary tracking-tight">بوابة الخدمات الحكومية</h1>
           <p className="text-gov-primary font-medium mt-1">الجمهورية العربية السورية</p>

@@ -30,10 +30,11 @@
 
 ## Current Status Log
 
-**[Visual Identity Polish: Numeric Input Fix]**
-* **Issue:** GESS font converted all digits to Arabic numerals (١٢٣), causing backend validation failures.
-* **Fix:** Created an `.english-nums` utility class in CSS to force standard numerals in sensitive fields.
-* **Applied:** Applied the fix to Login, Register, Marriage, and National ID inputs.
+**[Visual Identity Polish: Official Logo Integration]**
+* **Status:** Brand consistency finalized with the official SVG logo.
+* **UI:** Replaced placeholder SVG icons with the new `logo.svg` in:
+    * **Login Screen:** Large, centered logo with shadow.
+    * **Navbar:** Compact logo acting as the "Home" navigation button.
 
 **How to Test:**
 1. **Citizen Path:**

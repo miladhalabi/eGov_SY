@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --gov-primary: #b9a779;
+    --gov-secondary: #002623;
+    --gov-bg: #edebe0;
+  }
+  
+  body {
+    @apply bg-gov-bg text-gov-secondary antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, .gov-heading {
+    font-family: 'Noto Serif Arabic', serif;
+  }
+}
+
+@layer components {
+  .gov-card {
+    @apply bg-white rounded-2xl shadow-xl border border-gray-100;
+  }
+  
+  .gov-button-primary {
+    @apply bg-gov-secondary text-gov-primary font-bold py-3 px-6 rounded-xl 
+           transition-all duration-300 hover:shadow-lg hover:brightness-125 
+           active:scale-95 disabled:bg-gray-400;
+  }
+
+  .gov-input {
+    @apply w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none 
+           focus:ring-2 focus:ring-gov-primary focus:bg-white transition-all text-right;
+  }
+}

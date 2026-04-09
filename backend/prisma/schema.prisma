@@ -1,0 +1,177 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CITIZEN
+  EMPLOYEE
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TransferStatus {
+  INITIATED
+  PENDING_BUYER
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id               String   @id @default(uuid())
+  nationalId       String?  @unique // Optional because Employee might not have one in registry demo
+  password         String
+  fullName         String
+  role             Role     @default(CITIZEN)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  civilRecord      CivilRecord? @relation(fields: [nationalId], references: [nationalId])
+  vehicles         Vehicle[]
+  appointments     Appointment[]
+  financialRecords FinancialRecord[]
+  
+  // Relations for Birth Registrations
+  birthRegistrations CitizenBirthRegistration[] @relation("CitizenRegistrations")
+  approvedBirths    BirthRegistration[]        @relation("EmployeeApprovals")
+  
+  // Relations for Marriage Requests
+  marriageRequests  MarriageRequest[] @relation("InitiatorMarriageRequests")
+  approvedMarriages MarriageRequest[] @relation("EmployeeMarriageApprovals")
+
+  // Relations for Vehicle Transfers
+  sentTransfers     VehicleTransfer[]          @relation("SellerTransfers")
+  receivedTransfers VehicleTransfer[]          @relation("BuyerTransfers")
+
+  notifications     Notification[]
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model CivilRecord {
+  id            String   @id @default(uuid())
+  nationalId    String   @unique
+  fullName      String
+  fatherName    String
+  motherName    String
+  birthDate     DateTime
+  birthPlace    String
+  maritalStatus String   @default("عازب") // عازب، متزوج، مطلق، أرمل
+  religion      String?
+  gender        String   // MALE, FEMALE
+  
+  user          User?
+  
+  // Relations for Marriage Facts
+  asHusband     MarriageRecord[] @relation("HusbandRecords")
+  asWife        MarriageRecord[] @relation("WifeRecords")
+}
+
+model MarriageRequest {
+  id                String             @id @default(uuid())
+  initiatorId       String
+  initiator         User               @relation("InitiatorMarriageRequests", fields: [initiatorId], references: [id])
+  partnerNationalId String
+  contractNumber    String
+  documentPath      String
+  status            RegistrationStatus @default(PENDING)
+  approvedBy        String?
+  approver          User?              @relation("EmployeeMarriageApprovals", fields: [approvedBy], references: [id])
+  createdAt         DateTime           @default(now())
+}
+
+model MarriageRecord {
+  id             String      @id @default(uuid())
+  husbandId      String
+  husband        CivilRecord @relation("HusbandRecords", fields: [husbandId], references: [nationalId])
+  wifeId         String
+  wife           CivilRecord @relation("WifeRecords", fields: [wifeId], references: [nationalId])
+  contractNumber String      @unique
+  marriageDate   DateTime    @default(now())
+  isActive       Boolean     @default(true)
+}
+
+model BirthRegistration {
+  id             String             @id @default(uuid())
+  childName      String
+  childGender    String
+  hospitalDoc    String             // Path to uploaded image
+  status         RegistrationStatus @default(PENDING)
+  approvedBy     String?
+  approver       User?              @relation("EmployeeApprovals", fields: [approvedBy], references: [id])
+  createdAt      DateTime           @default(now())
+  
+  citizenRequest CitizenBirthRegistration?
+}
+
+model CitizenBirthRegistration {
+  id                  String            @id @default(uuid())
+  citizenId           String
+  citizen             User              @relation("CitizenRegistrations", fields: [citizenId], references: [id])
+  birthRegistrationId String            @unique
+  birthRegistration   BirthRegistration @relation(fields: [birthRegistrationId], references: [id])
+}
+
+model Vehicle {
+  id          String   @id @default(uuid())
+  plateNumber String   @unique
+  model       String
+  year        Int
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  
+  transfers   VehicleTransfer[]
+}
+
+model VehicleTransfer {
+  id        String         @id @default(uuid())
+  vehicleId String
+  vehicle   Vehicle        @relation(fields: [vehicleId], references: [id])
+  sellerId  String
+  seller    User           @relation("SellerTransfers", fields: [sellerId], references: [id])
+  buyerId   String
+  buyer     User           @relation("BuyerTransfers", fields: [buyerId], references: [id])
+  status    TransferStatus @default(INITIATED)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model FinancialRecord {
+  id         String   @id @default(uuid())
+  nationalId String
+  user       User?    @relation(fields: [nationalId], references: [nationalId])
+  type       String   // e.g., "TRAFFIC_FINE", "INCOME_TAX", "PROPERTY_TAX"
+  description String
+  amount     Float
+  isPaid     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Appointment {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  serviceType String
+  date        DateTime
+  timeSlot    String
+  createdAt   DateTime @default(now())
+}

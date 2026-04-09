@@ -30,10 +30,10 @@
 
 ## Current Status Log
 
-**[Visual Identity Upgrade: Custom Arabic Typography]**
-* **Status:** Brand identity strengthened with GESS font.
-* **UI:** Integrated `GESS.otf` as the primary typeface for the entire React frontend.
-* **Layout:** All headings, buttons, and body text now use the professional GESS font.
+**[Visual Identity Polish: Numeric Input Fix]**
+* **Issue:** GESS font converted all digits to Arabic numerals (١٢٣), causing backend validation failures.
+* **Fix:** Created an `.english-nums` utility class in CSS to force standard numerals in sensitive fields.
+* **Applied:** Applied the fix to Login, Register, Marriage, and National ID inputs.
 
 **How to Test:**
 1. **Citizen Path:**

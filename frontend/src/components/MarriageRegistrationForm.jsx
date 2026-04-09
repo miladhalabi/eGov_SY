@@ -53,7 +53,7 @@ function MarriageRegistrationForm() {
             <label className="block text-xs font-bold text-gray-400 mb-2 mr-1">الرقم الوطني للطرف الآخر</label>
             <input 
               type="text" 
-              className="gov-input" 
+              className="gov-input english-nums" 
               value={partnerId} 
               onChange={(e) => setPartnerId(e.target.value)} 
               placeholder="مثال: 2222222222"
@@ -64,7 +64,7 @@ function MarriageRegistrationForm() {
             <label className="block text-xs font-bold text-gray-400 mb-2 mr-1">رقم عقد الزواج</label>
             <input 
               type="text" 
-              className="gov-input" 
+              className="gov-input english-nums" 
               value={contractNum} 
               onChange={(e) => setContractNum(e.target.value)} 
               required 

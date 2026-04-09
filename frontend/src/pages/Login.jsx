@@ -59,7 +59,7 @@ function Login({ onRegister }) {
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 mr-1">الرقم الوطني</label>
               <input
                 type="text"
-                className="gov-input text-lg"
+                className="gov-input text-lg english-nums"
                 placeholder="0123456789"
                 value={nationalId}
                 onChange={(e) => setNationalId(e.target.value)}
@@ -71,7 +71,7 @@ function Login({ onRegister }) {
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 mr-1">كلمة المرور</label>
               <input
                 type="password"
-                className="gov-input text-lg"
+                className="gov-input text-lg english-nums"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

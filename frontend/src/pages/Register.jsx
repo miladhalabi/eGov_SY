@@ -57,7 +57,7 @@ function Register({ onBack }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div>
                <label className="block text-[10px] font-bold text-gray-400 mb-1 mr-1">الرقم الوطني</label>
-               <input type="text" className="gov-input" value={formData.nationalId} onChange={(e) => setFormData({...formData, nationalId: e.target.value})} required />
+               <input type="text" className="gov-input english-nums" value={formData.nationalId} onChange={(e) => setFormData({...formData, nationalId: e.target.value})} required />
              </div>
              <div>
                <label className="block text-[10px] font-bold text-gray-400 mb-1 mr-1">الاسم الكامل (مع الكنية)</label>
@@ -75,7 +75,7 @@ function Register({ onBack }) {
 
           <div className="pt-2">
             <label className="block text-[10px] font-bold text-gray-400 mb-1 mr-1">كلمة المرور المقترحة</label>
-            <input type="password" className="gov-input" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required />
+            <input type="password" className="gov-input english-nums" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required />
           </div>
 
           <div className="pt-6 flex flex-col gap-3">

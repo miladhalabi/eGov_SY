@@ -16,6 +16,7 @@ function App() {
   const { connect, disconnect } = useSocketStore()
   const [activeCategory, setActiveCategory] = useState(null)
   const [view, setView] = useState('DASHBOARD'); // DASHBOARD, REQUESTS, REGISTER
+  const [searchId, setSearchId] = useState('');
 
   useEffect(() => {
     if (token) {
@@ -23,24 +24,27 @@ function App() {
     } else {
       disconnect();
     }
-  }, [token]);
+  }, [token, connect, disconnect]);
 
-  const downloadRecord = async () => {
+  const downloadRecord = async (targetId = null) => {
     try {
-      const response = await axios.get('http://localhost:5000/api/civil/individual-record', {
+      const urlParams = targetId ? `?nationalId=${targetId}` : '';
+      const response = await axios.get(`http://localhost:5000/api/civil/individual-record${urlParams}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });
       
+      const fileNameId = targetId || user.nationalId;
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `record_${user.nationalId}.pdf`);
+      link.setAttribute('download', `record_${fileNameId}.pdf`);
       document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error('Error downloading PDF:', error);
-      alert('حدث خطأ أثناء تحميل الوثيقة');
+      alert('لم يتم العثور على بيانات لهذا الرقم الوطني');
     }
   };
 
@@ -130,9 +134,28 @@ function App() {
         
         {user.role === 'EMPLOYEE' ? (
           <div className="space-y-12">
-            <header className="mb-12">
-              <h2 className="text-3xl font-bold text-gov-secondary mb-2">منصة الموظف الحكومي</h2>
-              <p className="text-gray-500">مرحباً {user.fullName}. صلاحيات مراجعة السجلات المدنية والطلبات.</p>
+            <header className="mb-12 flex justify-between items-end">
+              <div>
+                <h2 className="text-3xl font-bold text-gov-secondary mb-2">منصة الموظف الحكومي</h2>
+                <p className="text-gray-500">مرحباً {user.fullName}. صلاحيات مراجعة السجلات المدنية والطلبات.</p>
+              </div>
+              
+              {/* Employee Global Search */}
+              <div className="flex gap-2">
+                 <input 
+                   type="text" 
+                   placeholder="بحث برقم وطني..." 
+                   className="gov-input english-nums py-2" 
+                   value={searchId}
+                   onChange={(e) => setSearchId(e.target.value)}
+                 />
+                 <button 
+                   onClick={() => downloadRecord(searchId)}
+                   className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-xl font-bold text-sm whitespace-nowrap"
+                 >
+                   إخراج قيد
+                 </button>
+              </div>
             </header>
             <EmployeeQueue />
           </div>
@@ -189,8 +212,8 @@ function App() {
                   </div>
                 )}
 
-                {activeCategory === 'TRAFFIC' && <div className="gov-card p-20 text-center"><h2 className="text-2xl">المرور قيد التطوير...</h2></div>}
-                {activeCategory === 'TAX' && <div className="gov-card p-20 text-center"><h2 className="text-2xl">المالية قيد التطوير...</h2></div>}
+                {activeCategory === 'TRAFFIC' && <div className="gov-card p-20 text-center"><h2 className="text-2xl font-bold text-gov-secondary mb-4">قسم المرور والنقل</h2><p className="text-gray-500">قيد التطوير...</p></div>}
+                {activeCategory === 'TAX' && <div className="gov-card p-20 text-center"><h2 className="text-2xl font-bold text-gov-secondary mb-4">الخدمات المالية والضرائب</h2><p className="text-gray-500">قيد التطوير...</p></div>}
               </div>
             )}
           </div>

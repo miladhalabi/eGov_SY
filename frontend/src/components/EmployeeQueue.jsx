@@ -64,7 +64,7 @@ function EmployeeQueue() {
           {marriages.map((m) => (
             <div key={m.id} className="gov-card p-6 flex justify-between items-center bg-blue-50/30">
               <div>
-                <p className="text-xs text-gov-primary font-bold">المقدم: {m.initiator.fullName}</p>
+                <p className="text-xs text-gov-primary font-bold">المقدم: {m.initiator?.fullName || 'غير معروف'}</p>
                 <h4 className="font-bold text-gov-secondary text-lg">الطرف الآخر: {m.partnerNationalId}</h4>
                 <p className="text-xs text-gray-400">رقم العقد: {m.contractNumber}</p>
               </div>
@@ -85,7 +85,7 @@ function EmployeeQueue() {
           {births.map((b) => (
             <div key={b.id} className="gov-card p-6 flex justify-between items-center">
               <div>
-                <p className="text-xs text-gov-primary font-bold">المقدم: {b.citizenRequest.citizen.fullName}</p>
+                <p className="text-xs text-gov-primary font-bold">المقدم: {b.citizenRequest?.citizen?.fullName || 'غير معروف'}</p>
                 <h4 className="font-bold text-gov-secondary text-lg">المولود: {b.childName} ({b.childGender})</h4>
               </div>
               <div className="flex gap-3">

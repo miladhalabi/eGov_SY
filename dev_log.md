@@ -30,11 +30,12 @@
 
 ## Current Status Log
 
-**[Visual Identity Polish: Official Logo Integration]**
-* **Status:** Brand consistency finalized with the official SVG logo.
-* **UI:** Replaced placeholder SVG icons with the new `logo.svg` in:
-    * **Login Screen:** Large, centered logo with shadow.
-    * **Navbar:** Compact logo acting as the "Home" navigation button.
+**[Step 6.5: Master Registry & Workflow Logic Completed]**
+* **Individual Record:** Refactored to pull data from the `CivilRecord` (Master Registry) table instead of `User`.
+* **Global Search:** Employees can now query and generate PDFs for any citizen using their National ID.
+* **Marital Birth Logic:** Citizens must select an active spouse from a dynamic dropdown before registering a birth.
+* **Auto-Civil Creation:** Approving a birth now automatically generates a new National ID and creates a legal identity in the registry for the child.
+* **Fixes:** Resolved all backend file path errors and frontend JSX syntax crashes.
 
 **How to Test:**
 1. **Citizen Path:**

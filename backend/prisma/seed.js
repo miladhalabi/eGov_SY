@@ -13,6 +13,7 @@ async function main() {
     { nationalId: '2222222222', fullName: 'ليلى الشامي', fatherName: 'عصام', motherName: 'سعاد', gender: 'FEMALE', birthPlace: 'حلب', birthDate: new Date('1992-08-20') },
     { nationalId: '3333333333', fullName: 'ياسين الحلبي', fatherName: 'عبد القادر', motherName: 'خديجة', gender: 'MALE', birthPlace: 'حمص', birthDate: new Date('1985-03-10') },
     { nationalId: '4444444444', fullName: 'هدى الحمصي', fatherName: 'منير', motherName: 'نوال', gender: 'FEMALE', birthPlace: 'حماة', birthDate: new Date('1994-11-25') },
+    { nationalId: '0000000001', fullName: 'سارة الموظفة', fatherName: 'حكومة', motherName: 'نظام', gender: 'FEMALE', birthPlace: 'دمشق', birthDate: new Date('1980-01-01') },
   ];
 
   for (const person of registry) {
@@ -37,9 +38,10 @@ async function main() {
 
   // 3. Create a Government Employee
   await prisma.user.upsert({
-    where: { nationalId: '0000000001' }, // Dummy ID for employee
+    where: { nationalId: '0000000001' },
     update: {},
     create: {
+      nationalId: '0000000001',
       fullName: 'سارة الموظفة',
       password: passwordHash,
       role: 'EMPLOYEE'

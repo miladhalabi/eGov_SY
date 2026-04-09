@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'GESS';
+  src: url('./assets/fonts/GESS.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 @layer base {
   :root {
     --gov-primary: #b9a779;
@@ -11,11 +18,11 @@
   
   body {
     @apply bg-gov-bg text-gov-secondary antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'GESS', system-ui, -apple-system, sans-serif;
   }
 
-  h1, h2, h3, .gov-heading {
-    font-family: 'Noto Serif Arabic', serif;
+  h1, h2, h3, h4, .gov-heading {
+    font-family: 'GESS', serif;
   }
 }
 
@@ -34,4 +41,13 @@
     @apply w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none 
            focus:ring-2 focus:ring-gov-primary focus:bg-white transition-all text-right;
   }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

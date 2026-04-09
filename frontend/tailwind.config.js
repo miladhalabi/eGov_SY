@@ -6,6 +6,10 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['GESS', 'sans-serif'],
+        serif: ['GESS', 'serif'],
+      },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
       },

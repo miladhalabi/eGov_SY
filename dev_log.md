@@ -1,4 +1,4 @@
-# AI Developer Log & Instructions
+# Developer Log & Instructions
 
 ## Project Overview
 **Name:** Electronic Government System (Syria) - Graduation Project

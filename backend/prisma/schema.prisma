@@ -21,16 +21,17 @@ enum RegistrationStatus {
   REJECTED
 }
 
-enum TransferStatus {
-  INITIATED
+enum VehicleTransferStatus {
   PENDING_BUYER
+  PENDING_EMPLOYEE
   COMPLETED
+  REJECTED
   CANCELLED
 }
 
 model User {
   id               String   @id @default(uuid())
-  nationalId       String?  @unique // Optional because Employee might not have one in registry demo
+  nationalId       String?  @unique
   password         String
   fullName         String
   role             Role     @default(CITIZEN)
@@ -73,9 +74,12 @@ model CivilRecord {
   fullName      String
   fatherName    String
   motherName    String
+  fatherNationalId String?
+  motherNationalId String?
   birthDate     DateTime
   birthPlace    String
   maritalStatus String   @default("عازب") // عازب، متزوج، مطلق، أرمل
+  livingStatus  String   @default("حي")   // حي، متوفى
   religion      String?
   gender        String   // MALE, FEMALE
   
@@ -100,7 +104,6 @@ model MarriageRequest {
   createdAt         DateTime           @default(now())
 }
 
-
 model MarriageRecord {
   id             String      @id @default(uuid())
   husbandId      String
@@ -116,7 +119,8 @@ model BirthRegistration {
   id             String             @id @default(uuid())
   childName      String
   childGender    String
-  hospitalDoc    String             // Path to uploaded image
+  spouseNationalId String?
+  hospitalDoc    String             
   status         RegistrationStatus @default(PENDING)
   rejectionReason String?
   approvedBy     String?
@@ -146,23 +150,25 @@ model Vehicle {
 }
 
 model VehicleTransfer {
-  id        String         @id @default(uuid())
-  vehicleId String
-  vehicle   Vehicle        @relation(fields: [vehicleId], references: [id])
-  sellerId  String
-  seller    User           @relation("SellerTransfers", fields: [sellerId], references: [id])
-  buyerId   String
-  buyer     User           @relation("BuyerTransfers", fields: [buyerId], references: [id])
-  status    TransferStatus @default(INITIATED)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id                String                @id @default(uuid())
+  vehicleId         String
+  vehicle           Vehicle               @relation(fields: [vehicleId], references: [id])
+  sellerId          String
+  seller            User                  @relation("SellerTransfers", fields: [sellerId], references: [id])
+  buyerId           String
+  buyer             User                  @relation("BuyerTransfers", fields: [buyerId], references: [id])
+  status            VehicleTransferStatus @default(PENDING_BUYER)
+  price             Float?
+  rejectionReason   String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 }
 
 model FinancialRecord {
   id         String   @id @default(uuid())
   nationalId String
   user       User?    @relation(fields: [nationalId], references: [nationalId])
-  type       String   // e.g., "TRAFFIC_FINE", "INCOME_TAX", "PROPERTY_TAX"
+  type       String   
   description String
   amount     Float
   isPaid     Boolean  @default(false)

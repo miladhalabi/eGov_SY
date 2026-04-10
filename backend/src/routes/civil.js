@@ -1,6 +1,7 @@
 import express from 'express';
 import { 
   getIndividualRecord, 
+  getFamilyRecord,
   getActiveSpouses,
   registerBirth, 
   getPendingBirths, 
@@ -18,6 +19,7 @@ const router = express.Router();
 
 // Citizen routes
 router.get('/individual-record', authenticate, getIndividualRecord);
+router.get('/family-record', authenticate, getFamilyRecord);
 router.get('/spouses', authenticate, getActiveSpouses);
 router.post('/register-birth', authenticate, upload.single('hospitalDoc'), registerBirth);
 router.post('/register-marriage', authenticate, upload.single('document'), registerMarriage);

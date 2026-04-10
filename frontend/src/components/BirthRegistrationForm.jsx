@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 
 function BirthRegistrationForm() {
   const [childName, setChildName] = useState('');
-  const [childGender, setChildGender] = useState('ذكر');
+  const [childGender, setChildGender] = useState('MALE');
   const [spouses, setSpouses] = useState([]);
   const [selectedSpouse, setSelectedSpouse] = useState('');
   const [file, setFile] = useState(null);
@@ -66,7 +66,7 @@ function BirthRegistrationForm() {
 
   if (spouses.length === 0) {
     return (
-      <div className="gov-card p-10 bg-red-50 border-r-8 border-red-500">
+      <div className="gov-card p-10 bg-red-50 border-r-8 border-red-500 animate-fade-in">
         <h3 className="text-xl font-bold text-red-700 mb-2">خدمة تسجيل الولادة مغلقة</h3>
         <p className="text-red-600 text-sm">عذراً، لا يمكنك تسجيل مولود جديد لعدم وجود عقد زواج مسجل باسمك في السجلات المدنية. يرجى تثبيت الزواج أولاً.</p>
       </div>
@@ -74,7 +74,7 @@ function BirthRegistrationForm() {
   }
 
   return (
-    <div className="gov-card p-8 shadow-2xl border-t-4 border-gov-primary">
+    <div className="gov-card p-8 shadow-2xl border-t-4 border-gov-primary animate-fade-in">
       <h3 className="text-2xl font-bold text-gov-secondary mb-6 border-r-4 border-gov-primary pr-4">تسجيل واقعة ولادة جديدة</h3>
       
       {message && (
@@ -92,8 +92,8 @@ function BirthRegistrationForm() {
           <div>
             <label className="block text-xs font-bold text-gray-400 mb-2 mr-1 uppercase tracking-widest">الجنس</label>
             <select className="gov-input" value={childGender} onChange={(e) => setChildGender(e.target.value)}>
-              <option value="ذكر">ذكر</option>
-              <option value="أنثى">أنثى</option>
+              <option value="MALE">ذكر</option>
+              <option value="FEMALE">أنثى</option>
             </select>
           </div>
         </div>

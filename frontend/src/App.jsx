@@ -11,6 +11,14 @@ import MyRequests from './pages/MyRequests'
 import NotificationBell from './components/NotificationBell'
 import logo from './assets/logo.svg'
 
+// Traffic Components
+import MyVehicles from './components/Traffic/MyVehicles'
+import TransferPopup from './components/Traffic/TransferPopup'
+import EmployeeTrafficQueue from './components/Traffic/EmployeeTrafficQueue'
+
+// Tax Components
+import TaxDashboard from './components/Tax/TaxDashboard'
+
 function App() {
   const { user, token, logout } = useAuthStore()
   const { connect, disconnect } = useSocketStore()
@@ -26,10 +34,11 @@ function App() {
     }
   }, [token, connect, disconnect]);
 
-  const downloadRecord = async (targetId = null) => {
+  const downloadRecord = async (targetId = null, type = 'individual') => {
     try {
+      const endpoint = type === 'family' ? 'family-record' : 'individual-record';
       const urlParams = targetId ? `?nationalId=${targetId}` : '';
-      const response = await axios.get(`http://localhost:5000/api/civil/individual-record${urlParams}`, {
+      const response = await axios.get(`http://localhost:5000/api/civil/${endpoint}${urlParams}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });
@@ -38,13 +47,13 @@ function App() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `record_${fileNameId}.pdf`);
+      link.setAttribute('download', `${type}_${fileNameId}.pdf`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
       console.error('Error downloading PDF:', error);
-      alert('لم يتم العثور على بيانات لهذا الرقم الوطني');
+      alert('لم يتم العثور على بيانات لهذه العملية أو هذا الرقم الوطني');
     }
   };
 
@@ -90,6 +99,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gov-bg flex flex-col font-sans text-right" dir="rtl">
+      {/* Global Real-time Popups */}
+      <TransferPopup />
+
       {/* Top Navbar */}
       <nav className="bg-gov-secondary text-white shadow-2xl border-b-4 border-gov-primary sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -130,34 +142,34 @@ function App() {
         </div>
       </nav>
 
+      {/* Main Content Area */}
       <main className="flex-grow max-w-7xl mx-auto w-full px-6 py-12">
         
         {user.role === 'EMPLOYEE' ? (
-          <div className="space-y-12">
-            <header className="mb-12 flex justify-between items-end">
+          <div className="space-y-20">
+            <header className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
               <div>
-                <h2 className="text-3xl font-bold text-gov-secondary mb-2">منصة الموظف الحكومي</h2>
-                <p className="text-gray-500">مرحباً {user.fullName}. صلاحيات مراجعة السجلات المدنية والطلبات.</p>
+                <h2 className="text-4xl font-bold text-gov-secondary mb-2">منصة العمليات الحكومية</h2>
+                <p className="text-gray-500">سجل الدخول كـ: {user.fullName} | موظف مختص</p>
               </div>
               
-              {/* Employee Global Search */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full md:w-auto">
                  <input 
-                   type="text" 
-                   placeholder="بحث برقم وطني..." 
+                   type="text" placeholder="بحث برقم وطني..." 
                    className="gov-input english-nums py-2" 
-                   value={searchId}
-                   onChange={(e) => setSearchId(e.target.value)}
+                   value={searchId} onChange={(e) => setSearchId(e.target.value)}
                  />
-                 <button 
-                   onClick={() => downloadRecord(searchId)}
-                   className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-xl font-bold text-sm whitespace-nowrap"
-                 >
-                   إخراج قيد
-                 </button>
+                 <div className="flex gap-1">
+                   <button onClick={() => downloadRecord(searchId, 'individual')} className="bg-gov-secondary text-gov-primary px-4 py-2 rounded-xl font-bold text-xs">قيد فردي</button>
+                   <button onClick={() => downloadRecord(searchId, 'family')} className="bg-gov-secondary text-gov-primary px-4 py-2 rounded-xl font-bold text-xs">بيان عائلي</button>
+                 </div>
               </div>
             </header>
-            <EmployeeQueue />
+            
+            <div className="grid grid-cols-1 gap-20">
+              <EmployeeQueue />
+              <EmployeeTrafficQueue />
+            </div>
           </div>
         ) : view === 'REQUESTS' ? (
           <MyRequests onBack={() => setView('DASHBOARD')} />
@@ -165,55 +177,62 @@ function App() {
           <div className="space-y-12">
             {!activeCategory ? (
               <>
-                <header className="mb-12">
-                  <h2 className="text-3xl font-bold text-gov-secondary mb-2">لوحة التحكم الرئيسية</h2>
-                  <p className="text-gray-500">اختر القسم المطلوب للمتابعة.</p>
+                <header className="mb-12 text-center">
+                  <h2 className="text-4xl font-bold text-gov-secondary mb-4">أهلاً بك في البوابة الوطنية</h2>
+                  <p className="text-gray-500 text-lg">اختر القسم المطلوب للبدء بمعاملتك الإلكترونية</p>
                 </header>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   {categories.map((cat) => (
                     <div key={cat.id} onClick={() => setActiveCategory(cat.id)} className="gov-card p-10 flex flex-col items-center text-center cursor-pointer hover:scale-[1.03] transition-all group border-b-8 border-transparent hover:border-gov-primary">
                       <div className="bg-gov-secondary text-gov-primary p-6 rounded-3xl mb-6 shadow-lg">{cat.icon}</div>
                       <h3 className="text-2xl font-bold text-gov-secondary mb-3">{cat.name}</h3>
-                      <p className="text-sm text-gray-500">{cat.description}</p>
+                      <p className="text-sm text-gray-500 leading-relaxed">{cat.description}</p>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
               <div className="animate-fade-in space-y-10">
-                <button onClick={() => setActiveCategory(null)} className="flex items-center gap-2 text-gov-secondary font-bold">
+                <button onClick={() => setActiveCategory(null)} className="flex items-center gap-2 text-gov-secondary font-bold hover:text-gov-primary transition-colors">
                   <svg className="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                  العودة للأقسام
+                  العودة للأقسام الرئيسية
                 </button>
 
                 {activeCategory === 'CIVIL' && (
                   <div className="space-y-12">
                     <header>
                       <h2 className="text-4xl font-bold text-gov-secondary mb-2">قسم الشؤون المدنية</h2>
+                      <p className="text-gray-500">بيانات القيد الفردي والعائلي والولادات.</p>
                     </header>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                       <div className="gov-card p-10 border-r-8 border-gov-primary cursor-pointer" onClick={downloadRecord}>
-                          <h4 className="text-2xl font-bold text-gov-secondary mb-3">إخراج قيد فردي</h4>
-                          <p className="text-gray-500 text-sm mb-6">تحميل وثيقة القيد المدني الفردي.</p>
-                          <span className="text-gov-primary font-bold">تحميل الآن ↓</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                       <div className="gov-card p-8 border-r-8 border-gov-primary flex flex-col justify-between hover:shadow-2xl transition-shadow cursor-pointer" onClick={() => downloadRecord(null, 'individual')}>
+                          <div><div className="bg-gov-bg p-3 rounded-xl w-fit text-gov-secondary mb-4 shadow-inner"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div><h4 className="text-xl font-bold text-gov-secondary mb-2">إخراج قيد فردي</h4><p className="text-gray-500 text-xs leading-relaxed">تحميل وثيقة القيد المدني الفردي بصيغة PDF.</p></div>
                        </div>
-                       <div className="gov-card p-10 bg-gov-secondary text-white relative overflow-hidden">
-                         <div className="relative z-10">
-                            <h4 className="text-gov-primary text-2xl font-bold mb-3">دليل الخدمات</h4>
-                            <p className="text-gray-300 text-sm">الوثائق معتمدة رسمياً.</p>
-                         </div>
+                       <div className="gov-card p-8 border-r-8 border-gov-primary flex flex-col justify-between hover:shadow-2xl transition-shadow cursor-pointer" onClick={() => downloadRecord(null, 'family')}>
+                          <div><div className="bg-gov-bg p-3 rounded-xl w-fit text-gov-secondary mb-4 shadow-inner"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg></div><h4 className="text-xl font-bold text-gov-secondary mb-2">بيان قيد عائلي</h4><p className="text-gray-500 text-xs leading-relaxed">تحميل خلاصة السجل المدني للعائلة والأولاد.</p></div>
                        </div>
+                       <div className="gov-card p-8 bg-gov-secondary text-white relative overflow-hidden flex items-center shadow-2xl"><div className="absolute top-0 right-0 w-64 h-64 bg-gov-primary opacity-10 -mr-20 -mt-20 rounded-full"></div><div className="relative z-10"><h4 className="text-gov-primary text-xl font-bold mb-2">دليل الخدمات</h4><p className="text-gray-300 text-[10px] leading-relaxed">الوثائق الرقمية المستخرجة من هذه المنصة قانونية ومعتمدة رسمياً.</p></div></div>
                     </div>
-                    
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
-                      <MarriageRegistrationForm />
-                      <BirthRegistrationForm />
-                    </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-12"><MarriageRegistrationForm /><BirthRegistrationForm /></div>
                   </div>
                 )}
 
-                {activeCategory === 'TRAFFIC' && <div className="gov-card p-20 text-center"><h2 className="text-2xl font-bold text-gov-secondary mb-4">قسم المرور والنقل</h2><p className="text-gray-500">قيد التطوير...</p></div>}
-                {activeCategory === 'TAX' && <div className="gov-card p-20 text-center"><h2 className="text-2xl font-bold text-gov-secondary mb-4">الخدمات المالية والضرائب</h2><p className="text-gray-500">قيد التطوير...</p></div>}
+                {activeCategory === 'TRAFFIC' && (
+                   <div className="space-y-12">
+                      <header>
+                        <h2 className="text-4xl font-bold text-gov-secondary mb-2">قسم المرور والنقل</h2>
+                        <p className="text-gray-500">إدارة المركبات، نقل الملكية، وكشف المخالفات.</p>
+                      </header>
+                      <MyVehicles />
+                   </div>
+                )}
+                
+                {activeCategory === 'TAX' && (
+                   <div className="gov-card p-20 text-center">
+                      <h2 className="text-3xl font-bold text-gov-secondary mb-4">الخدمات المالية والضرائب</h2>
+                      <p className="text-gray-500">سيتم توفير براءات الذمة وخدمات التحصيل المالي قريباً.</p>
+                   </div>
+                )}
               </div>
             )}
           </div>

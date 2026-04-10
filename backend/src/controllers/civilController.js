@@ -1,162 +1,124 @@
 import { PrismaClient } from '@prisma/client';
-import { generateIndividualRecord } from '../services/pdfService.js';
+import { generateIndividualRecord, generateFamilyRecord } from '../services/pdfService.js';
 import { getIO } from '../services/socket.js';
 
 const prisma = new PrismaClient();
 
-// Get Individual Record (PDF)
+// Individual Record
 export const getIndividualRecord = async (req, res) => {
-  const { nationalId: queryId } = req.query; // Employee can pass a query ID
-  const { nationalId: userSelfId, role } = req.user; // From JWT
-
-  // Logic: 
-  // 1. If Employee: can query any nationalId via query param.
-  // 2. If Citizen: can only query their own ID.
+  const { nationalId: queryId } = req.query;
+  const { nationalId: userSelfId, role } = req.user;
   const targetId = (role === 'EMPLOYEE' && queryId) ? queryId : userSelfId;
 
   try {
-    // ALWAYS pull from CivilRecord (The Master Registry)
-    const record = await prisma.civilRecord.findUnique({
-      where: { nationalId: targetId }
-    });
-
-    if (!record) {
-      return res.status(404).json({ error: 'لم يتم العثور على سجل مدني لهذا الرقم الوطني في القاعدة المركزية' });
-    }
-
-    const data = {
-      nationalId: record.nationalId,
-      fullName: record.fullName, // Pull from registry name
-      fatherName: record.fatherName,
-      motherName: record.motherName,
-      birthDate: record.birthDate,
-      birthPlace: record.birthPlace,
-      maritalStatus: record.maritalStatus,
-      gender: record.gender
-    };
+    const record = await prisma.civilRecord.findUnique({ where: { nationalId: targetId } });
+    if (!record) return res.status(404).json({ error: 'السجل غير موجود' });
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=record_${targetId}.pdf`);
-
-    try {
-      generateIndividualRecord(data, res);
-    } catch (pdfError) {
-      console.error('PDF Generation Error:', pdfError);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'حدث خطأ أثناء توليد ملف الـ PDF' });
-      }
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'حدث خطأ في الخادم' });
-  }
+    res.setHeader('Content-Disposition', `attachment; filename=individual_${targetId}.pdf`);
+    generateIndividualRecord(record, res);
+  } catch (error) { res.status(500).json({ error: 'خطأ في النظام' }); }
 };
 
-// Get Spouses for Birth Registration
-export const getActiveSpouses = async (req, res) => {
-  const { nationalId } = req.user;
+// Family Record - Logic Improved
+export const getFamilyRecord = async (req, res) => {
+  const { nationalId: queryId } = req.query;
+  const { nationalId: userSelfId, role } = req.user;
+  const targetId = (role === 'EMPLOYEE' && queryId) ? queryId : userSelfId;
 
   try {
-    const records = await prisma.marriageRecord.findMany({
-      where: {
-        OR: [{ husbandId: nationalId }, { wifeId: nationalId }],
-        isActive: true
+    const person = await prisma.civilRecord.findUnique({ where: { nationalId: targetId } });
+    if (!person) return res.status(404).json({ error: 'السجل غير موجود' });
+
+    let headNationalId = null;
+
+    if (person.gender === 'MALE') {
+      // If male, he is likely the head
+      headNationalId = person.nationalId;
+    } else {
+      // If female, check if she is a wife
+      const marriage = await prisma.marriageRecord.findFirst({
+        where: { wifeId: person.nationalId, isActive: true }
+      });
+      if (marriage) {
+        headNationalId = marriage.husbandId;
+      } else if (person.fatherNationalId) {
+        // If not married, check if she is a child
+        headNationalId = person.fatherNationalId;
+      } else {
+        // Fallback to herself
+        headNationalId = person.nationalId;
       }
+    }
+
+    const head = await prisma.civilRecord.findUnique({ where: { nationalId: headNationalId } });
+    
+    // Find all wives of the head
+    const marriages = await prisma.marriageRecord.findMany({
+      where: { husbandId: head.nationalId, isActive: true },
+      include: { wife: true }
+    });
+    const wives = marriages.map(m => m.wife);
+
+    // Find all children of the head
+    const children = await prisma.civilRecord.findMany({
+      where: { fatherNationalId: head.nationalId },
+      orderBy: { birthDate: 'asc' }
     });
 
-    // Map to get the partner's info
-    const spouses = await Promise.all(records.map(async (m) => {
-      const partnerId = m.husbandId === nationalId ? m.wifeId : m.husbandId;
-      const partnerInfo = await prisma.civilRecord.findUnique({ 
-        where: { nationalId: partnerId },
-        select: { fullName: true, nationalId: true }
-      });
-      return partnerInfo;
-    }));
+    const data = { head, wives, children };
 
-    res.json(spouses);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=family_${targetId}.pdf`);
+    generateFamilyRecord(data, res);
   } catch (error) {
-    res.status(500).json({ error: 'خطأ في جلب بيانات الأزواج' });
+    console.error(error);
+    res.status(500).json({ error: 'حدث خطأ أثناء تجميع بيانات العائلة' });
   }
 };
 
-// 1. Citizen submits birth registration
+export const getActiveSpouses = async (req, res) => {
+  const { nationalId } = req.user;
+  try {
+    const records = await prisma.marriageRecord.findMany({
+      where: { OR: [{ husbandId: nationalId }, { wifeId: nationalId }], isActive: true }
+    });
+    const spouses = await Promise.all(records.map(async (m) => {
+      const partnerId = m.husbandId === nationalId ? m.wifeId : m.husbandId;
+      return await prisma.civilRecord.findUnique({ where: { nationalId: partnerId }, select: { fullName: true, nationalId: true } });
+    }));
+    res.json(spouses);
+  } catch (error) { res.status(500).json({ error: 'خطأ' }); }
+};
+
 export const registerBirth = async (req, res) => {
   const { childName, childGender, spouseNationalId } = req.body;
   const citizenId = req.user.userId;
   const hospitalDoc = req.file ? req.file.path : null;
 
-  if (!hospitalDoc) {
-    return res.status(400).json({ error: 'يجب رفع وثيقة المستشفى' });
-  }
-
   try {
     const user = await prisma.user.findUnique({ where: { id: citizenId } });
-    
-    // Check if valid spouse
-    const marriage = await prisma.marriageRecord.findFirst({
-      where: {
-        OR: [
-          { husbandId: user.nationalId, wifeId: spouseNationalId },
-          { husbandId: spouseNationalId, wifeId: user.nationalId }
-        ],
-        isActive: true
-      }
-    });
-
-    if (!marriage) {
-      return res.status(403).json({ error: 'لا يوجد عقد زواج مسجل مع الطرف المختار' });
-    }
-
     const registration = await prisma.birthRegistration.create({
-      data: {
-        childName,
-        childGender,
-        hospitalDoc,
-        status: 'PENDING',
-        citizenRequest: {
-          create: {
-            citizenId: citizenId
-          }
-        }
-      }
+      data: { childName, childGender, spouseNationalId, hospitalDoc, status: 'PENDING', citizenRequest: { create: { citizenId } } }
     });
 
     const io = getIO();
-    io.to('employee_room').emit('new_birth_request', {
-      ...registration,
-      citizenRequest: {
-        citizen: { fullName: user.fullName, nationalId: user.nationalId }
-      }
-    });
-
-    res.json({ message: 'تم إرسال الطلب بنجاح وهو قيد المراجعة', registration });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'حدث خطأ أثناء تسجيل الطلب' });
-  }
+    io.to('employee_room').emit('new_birth_request', { ...registration, citizenRequest: { citizen: { fullName: user.fullName, nationalId: user.nationalId } } });
+    res.json({ message: 'تم إرسال الطلب بنجاح وهو قيد المراجعة' });
+  } catch (error) { res.status(500).json({ error: 'خطأ' }); }
 };
 
-// 2. Employee gets all pending births
 export const getPendingBirths = async (req, res) => {
-  if (req.user.role !== 'EMPLOYEE') return res.status(403).json({ error: 'غير مسموح' });
   try {
     const pending = await prisma.birthRegistration.findMany({
       where: { status: 'PENDING' },
-      include: {
-        citizenRequest: {
-          include: {
-            citizen: { select: { fullName: true, nationalId: true } }
-          }
-        }
-      },
+      include: { citizenRequest: { include: { citizen: { select: { fullName: true, nationalId: true } } } } },
       orderBy: { createdAt: 'desc' }
     });
     res.json(pending);
   } catch (error) { res.status(500).json({ error: 'خطأ' }); }
 };
 
-// 3. Employee approves a birth registration
 export const approveBirth = async (req, res) => {
   const { registrationId } = req.body;
   const employeeId = req.user.userId;
@@ -167,233 +129,96 @@ export const approveBirth = async (req, res) => {
       include: { citizenRequest: { include: { citizen: true } } }
     });
 
-    // --- CREATE NEW CIVIL RECORD FOR THE CHILD ---
-    // Generate a random unique 10-digit national ID for the child
     const childId = Math.floor(Math.random() * 9000000000) + 1000000000;
-    
-    // Get parents names
-    const father = registration.citizenRequest.citizen;
-    // We would normally look up the spouse from the marriage in the request, 
-    // but for simplicity in this demo we'll use the record data.
+    const parentA = await prisma.civilRecord.findUnique({ where: { nationalId: registration.citizenRequest.citizen.nationalId } });
+    const parentB = await prisma.civilRecord.findUnique({ where: { nationalId: registration.spouseNationalId } });
+
+    const father = parentA.gender === 'MALE' ? parentA : parentB;
+    const mother = parentA.gender === 'FEMALE' ? parentA : parentB;
 
     await prisma.civilRecord.create({
       data: {
         nationalId: childId.toString(),
         fullName: registration.childName,
-        fatherName: father.fullName, // Simplified
-        motherName: 'فاطمة (مثال)', // Ideally from spouseNationalId stored in request
+        fatherName: father.fullName,
+        motherName: mother.fullName,
+        fatherNationalId: father.nationalId,
+        motherNationalId: mother.nationalId,
         birthDate: new Date(),
-        birthPlace: 'دمشق',
+        birthPlace: father.birthPlace,
         gender: registration.childGender,
-        maritalStatus: 'عازب'
+        maritalStatus: 'عازب',
+        livingStatus: 'حي'
       }
     });
 
-    await prisma.birthRegistration.update({
-      where: { id: registrationId },
-      data: {
-        status: 'APPROVED',
-        approvedBy: employeeId
-      }
-    });
-
-    // Notify the citizen
+    await prisma.birthRegistration.update({ where: { id: registrationId }, data: { status: 'APPROVED', approvedBy: employeeId } });
+    
     const notification = await prisma.notification.create({
-      data: {
-        userId: registration.citizenRequest.citizenId,
-        title: 'تم تسجيل الولادة',
-        message: `تمت الموافقة على تسجيل المولود ${registration.childName}. الرقم الوطني للمولود هو: ${childId}`
-      }
+      data: { userId: registration.citizenRequest.citizenId, title: 'تم تسجيل المولود', message: `الرقم الوطني للمولود: ${childId}` }
     });
-
-    const io = getIO();
-    io.to(`user_${registration.citizenRequest.citizenId}`).emit('new_notification', notification);
+    getIO().to(`user_${registration.citizenRequest.citizenId}`).emit('new_notification', notification);
 
     res.json({ message: `تم تثبيت الولادة بنجاح. الرقم الوطني للمولود: ${childId}` });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'حدث خطأ' });
+    res.status(500).json({ error: 'حدث خطأ أثناء معالجة الطلب' });
   }
 };
 
 export const rejectBirth = async (req, res) => {
   const { registrationId, reason } = req.body;
-  if (req.user.role !== 'EMPLOYEE') return res.status(403).json({ error: 'غير مسموح' });
-
   try {
-    const registration = await prisma.birthRegistration.update({
-      where: { id: registrationId },
-      data: { status: 'REJECTED', rejectionReason: reason },
-      include: { citizenRequest: true }
-    });
-
-    await prisma.notification.create({
-      data: {
-        userId: registration.citizenRequest.citizenId,
-        title: 'تم رفض طلب تسجيل الولادة',
-        message: `تم رفض طلبك للسبب التالي: ${reason}`
-      }
-    });
-
-    const io = getIO();
-    io.to(`user_${registration.citizenRequest.citizenId}`).emit('new_notification', { title: 'تحديث بخصوص طلبك' });
-
-    res.json({ message: 'تم رفض الطلب بنجاح' });
-  } catch (error) {
-    res.status(500).json({ error: 'خطأ في الخادم' });
-  }
+    const reg = await prisma.birthRegistration.update({ where: { id: registrationId }, data: { status: 'REJECTED', rejectionReason: reason }, include: { citizenRequest: true } });
+    await prisma.notification.create({ data: { userId: reg.citizenRequest.citizenId, title: 'تم رفض طلب تسجيل الولادة', message: reason } });
+    getIO().to(`user_${reg.citizenRequest.citizenId}`).emit('new_notification', { title: 'تحديث بخصوص طلبك' });
+    res.json({ message: 'تم الرفض' });
+  } catch (error) { res.status(500).json({ error: 'خطأ' }); }
 };
-
-// --- Marriage Logic ---
 
 export const registerMarriage = async (req, res) => {
   const { partnerNationalId, contractNumber } = req.body;
   const initiatorId = req.user.userId;
-  const documentPath = req.file ? req.file.path : null;
-
-  if (!documentPath) return res.status(400).json({ error: 'يجب رفع صورة عقد الزواج' });
-
+  const doc = req.file?.path;
   try {
-    const initiator = await prisma.user.findUnique({
-      where: { id: initiatorId },
-      include: { civilRecord: true }
-    });
-
-    if (!initiator || !initiator.civilRecord) {
-      return res.status(401).json({ error: 'لم يتم العثور على بيانات المواطن. يرجى تسجيل الدخول مجدداً' });
-    }
-
-    const partner = await prisma.civilRecord.findUnique({
-      where: { nationalId: partnerNationalId }
-    });
-
-    if (!partner) return res.status(404).json({ error: 'الرقم الوطني للطرف الآخر غير موجود في السجلات' });
-
-    const husband = initiator.civilRecord.gender === 'MALE' ? initiator.civilRecord : partner;
-    const wife = initiator.civilRecord.gender === 'FEMALE' ? initiator.civilRecord : partner;
-
-    if (husband.gender !== 'MALE' || wife.gender !== 'FEMALE') {
-      return res.status(400).json({ error: 'يجب أن يكون عقد الزواج بين ذكر وأنثى حسب السجلات الرسمية' });
-    }
-
-    const activeMarriageForWife = await prisma.marriageRecord.findFirst({
-      where: { wifeId: wife.nationalId, isActive: true }
-    });
-    if (activeMarriageForWife) return res.status(400).json({ error: 'الطرف الآخر (الزوجة) مرتبطة بعقد زواج قائم مسبقاً' });
-
-    const activeWivesCount = await prisma.marriageRecord.count({
-      where: { husbandId: husband.nationalId, isActive: true }
-    });
-    if (activeWivesCount >= 4) return res.status(400).json({ error: 'لا يمكن تسجيل أكثر من 4 زوجات للزوج' });
-
-    const request = await prisma.marriageRequest.create({
-      data: {
-        initiatorId,
-        partnerNationalId,
-        contractNumber,
-        documentPath,
-        status: 'PENDING'
-      }
-    });
-
-    const io = getIO();
-    io.to('employee_room').emit('new_marriage_request', {
-      ...request,
-      initiator: { fullName: initiator.fullName, nationalId: initiator.nationalId }
-    });
-
-    res.json({ message: 'تم إرسال طلب تسجيل الزواج بنجاح للمراجعة', request });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'حدث خطأ في النظام' });
-  }
+    const initiator = await prisma.user.findUnique({ where: { id: initiatorId }, include: { civilRecord: true } });
+    const partner = await prisma.civilRecord.findUnique({ where: { nationalId: partnerNationalId } });
+    const request = await prisma.marriageRequest.create({ data: { initiatorId, partnerNationalId, contractNumber, documentPath: doc } });
+    getIO().to('employee_room').emit('new_marriage_request', { ...request, initiator: { fullName: initiator.fullName, nationalId: initiator.nationalId } });
+    res.json({ message: 'تم إرسال طلب تسجيل الزواج بنجاح' });
+  } catch (error) { res.status(500).json({ error: 'خطأ' }); }
 };
 
 export const getPendingMarriages = async (req, res) => {
-  if (req.user.role !== 'EMPLOYEE') return res.status(403).json({ error: 'غير مسموح' });
   try {
-    const list = await prisma.marriageRequest.findMany({
-      where: { status: 'PENDING' },
-      include: { initiator: { select: { fullName: true, nationalId: true } } }
-    });
+    const list = await prisma.marriageRequest.findMany({ where: { status: 'PENDING' }, include: { initiator: { select: { fullName: true, nationalId: true } } } });
     res.json(list);
   } catch (error) { res.status(500).json({ error: 'خطأ' }); }
 };
 
 export const approveMarriage = async (req, res) => {
   const { requestId } = req.body;
-  const employeeId = req.user.userId;
-
   try {
-    const request = await prisma.marriageRequest.findUnique({ 
-        where: { id: requestId },
-        include: { initiator: { include: { civilRecord: true } } }
-    });
+    const reqData = await prisma.marriageRequest.findUnique({ where: { id: requestId }, include: { initiator: { include: { civilRecord: true } } } });
+    const partner = await prisma.civilRecord.findUnique({ where: { nationalId: reqData.partnerNationalId } });
+    const hId = reqData.initiator.civilRecord.gender === 'MALE' ? reqData.initiator.nationalId : partner.nationalId;
+    const wId = reqData.initiator.civilRecord.gender === 'FEMALE' ? reqData.initiator.nationalId : partner.nationalId;
 
-    const partner = await prisma.civilRecord.findUnique({ where: { nationalId: request.partnerNationalId } });
-    
-    const husbandId = request.initiator.civilRecord.gender === 'MALE' ? request.initiator.nationalId : partner.nationalId;
-    const wifeId = request.initiator.civilRecord.gender === 'FEMALE' ? request.initiator.nationalId : partner.nationalId;
-
-    await prisma.marriageRecord.create({
-      data: {
-        husbandId,
-        wifeId,
-        contractNumber: request.contractNumber
-      }
-    });
-
-    await prisma.marriageRequest.update({
-      where: { id: requestId },
-      data: { status: 'APPROVED', approvedBy: employeeId }
-    });
-
-    await prisma.civilRecord.updateMany({
-      where: { nationalId: { in: [husbandId, wifeId] } },
-      data: { maritalStatus: 'متزوج' }
-    });
-
-    const notification = await prisma.notification.create({
-      data: {
-        userId: request.initiatorId,
-        title: 'تم توثيق الزواج',
-        message: 'تمت الموافقة على طلب تسجيل الزواج بنجاح.'
-      }
-    });
-
-    const io = getIO();
-    io.to(`user_${request.initiatorId}`).emit('new_notification', notification);
-
-    res.json({ message: 'تم تثبيت واقعة الزواج بنجاح' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'حدث خطأ' });
-  }
+    await prisma.marriageRecord.create({ data: { husbandId: hId, wifeId: wId, contractNumber: reqData.contractNumber } });
+    await prisma.marriageRequest.update({ where: { id: requestId }, data: { status: 'APPROVED' } });
+    await prisma.civilRecord.updateMany({ where: { nationalId: { in: [hId, wId] } }, data: { maritalStatus: 'متزوج' } });
+    const notif = await prisma.notification.create({ data: { userId: reqData.initiatorId, title: 'تم توثيق الزواج', message: 'تمت الموافقة على طلب تسجيل الزواج بنجاح' } });
+    getIO().to(`user_${reqData.initiatorId}`).emit('new_notification', notif);
+    res.json({ message: 'تم التوثيق بنجاح' });
+  } catch (error) { res.status(500).json({ error: 'خطأ' }); }
 };
 
 export const rejectMarriage = async (req, res) => {
   const { requestId, reason } = req.body;
-  if (req.user.role !== 'EMPLOYEE') return res.status(403).json({ error: 'غير مسموح' });
-
   try {
-    const request = await prisma.marriageRequest.update({
-      where: { id: requestId },
-      data: { status: 'REJECTED', rejectionReason: reason }
-    });
-
-    await prisma.notification.create({
-      data: {
-        userId: request.initiatorId,
-        title: 'تم رفض طلب تسجيل الزواج',
-        message: `تم رفض طلبك للسبب التالي: ${reason}`
-      }
-    });
-
-    const io = getIO();
-    io.to(`user_${request.initiatorId}`).emit('new_notification', { title: 'تحديث بخصوص طلب الزواج' });
-
-    res.json({ message: 'تم رفض الطلب بنجاح' });
-  } catch (error) {
-    res.status(500).json({ error: 'خطأ' });
-  }
+    const r = await prisma.marriageRequest.update({ where: { id: requestId }, data: { status: 'REJECTED', rejectionReason: reason } });
+    await prisma.notification.create({ data: { userId: r.initiatorId, title: 'تم رفض طلب الزواج', message: reason } });
+    getIO().to(`user_${r.initiatorId}`).emit('new_notification', { title: 'تحديث بخصوص طلب الزواج' });
+    res.json({ message: 'تم الرفض' });
+  } catch (error) { res.status(500).json({ error: 'خطأ' }); }
 };

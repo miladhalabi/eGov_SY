@@ -7,7 +7,6 @@ async function main() {
   const passwordHash = await bcrypt.hash('password123', 10);
 
   // 1. Seed the Civil Registry (Master Data)
-  // These are people who exist in the government records but don't have portal accounts yet.
   const registry = [
     { nationalId: '1234567890', fullName: 'أحمد السوري', fatherName: 'محمود', motherName: 'فاطمة', gender: 'MALE', birthPlace: 'دمشق', birthDate: new Date('1990-05-15') },
     { nationalId: '2222222222', fullName: 'ليلى الشامي', fatherName: 'عصام', motherName: 'سعاد', gender: 'FEMALE', birthPlace: 'حلب', birthDate: new Date('1992-08-20') },
@@ -66,7 +65,7 @@ async function main() {
     }
   });
 
-  console.log('Robust Citizen Registry seeded successfully!');
+  console.log('Registry seeded with MALE/FEMALE standards!');
 }
 
 main()

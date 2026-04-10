@@ -6,6 +6,8 @@ import { initSocket } from './src/services/socket.js';
 import authRoutes from './src/routes/auth.js';
 import civilRoutes from './src/routes/civil.js';
 import citizenRoutes from './src/routes/citizen.js';
+import trafficRoutes from './src/routes/traffic.js';
+import taxRoutes from './src/routes/tax.js';
 
 dotenv.config();
 
@@ -24,6 +26,8 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/auth', authRoutes);
 app.use('/api/civil', civilRoutes);
 app.use('/api/citizen', citizenRoutes);
+app.use('/api/traffic', trafficRoutes);
+app.use('/api/tax', taxRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Government System Backend is Online', timestamp: new Date() });

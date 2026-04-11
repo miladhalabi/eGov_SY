@@ -5,7 +5,8 @@ import {
   handleBuyerDecision,
   getPendingTransfers,
   finalizeTransfer,
-  getIncomingTransfers
+  getIncomingTransfers,
+  submitBankProof
 } from '../controllers/trafficController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 
@@ -16,6 +17,7 @@ router.get('/my-vehicles', authenticate, getMyVehicles);
 router.get('/incoming-transfers', authenticate, getIncomingTransfers);
 router.post('/initiate-transfer', authenticate, initiateTransfer);
 router.post('/respond-transfer', authenticate, handleBuyerDecision);
+router.post('/submit-bank-proof', authenticate, submitBankProof);
 
 // Employee routes
 router.get('/pending-transfers', authenticate, getPendingTransfers);

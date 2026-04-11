@@ -57,7 +57,16 @@ function EmployeeTrafficQueue() {
                    <span>البائع: {t.seller.fullName}</span>
                    <span>المشتري: {t.buyer.fullName}</span>
                 </div>
-                <p className="text-xs text-gov-primary font-bold mt-2 tracking-widest">السعر: {t.price} ل.س</p>
+                 <p className="text-xs text-gov-primary font-bold mt-2 tracking-widest">السعر: {t.price} ل.س</p>
+                 {t.bankTransactionId && (
+                   <div className="mt-2 flex items-center gap-2">
+                     <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1">
+                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                       تم التحقق بنكياً
+                     </span>
+                     <span className="text-[10px] text-gray-400 font-mono">#{t.bankTransactionId}</span>
+                   </div>
+                 )}
              </div>
              <div className="flex gap-3">
                 <button onClick={() => handleFinalize(t.id, 'COMPLETED')} className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-lg font-bold">تدقيق وتثبيت</button>

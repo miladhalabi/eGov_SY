@@ -28,11 +28,15 @@ export const initiateTransfer = async (req, res) => {
   const sellerId = req.user.userId;
 
   try {
-    // 1. Verify Ownership
+    // 1. Verify Ownership & Self-Selling
     const vehicle = await prisma.vehicle.findFirst({
       where: { id: vehicleId, ownerId: sellerId }
     });
     if (!vehicle) return res.status(403).json({ error: 'أنت لا تملك هذه المركبة' });
+
+    if (buyerNationalId === req.user.nationalId) {
+      return res.status(400).json({ error: 'لا يمكن بيع المركبة لنفسك' });
+    }
 
     // 2. Check for Traffic Fines / Taxes
     const unpaidFines = await prisma.financialRecord.findMany({
@@ -88,23 +92,39 @@ export const handleBuyerDecision = async (req, res) => {
 
   try {
     const transfer = await prisma.vehicleTransfer.findFirst({
-      where: { id: transferId, buyerId: buyerId, status: 'PENDING_BUYER' }
+      where: { 
+        id: transferId, 
+        buyerId: buyerId, 
+        status: { in: ['PENDING_BUYER', 'WAITING_FOR_PAYMENT'] } 
+      },
+      include: { vehicle: true }
     });
 
-    if (!transfer) return res.status(404).json({ error: 'الطلب غير موجود' });
+    if (!transfer) return res.status(404).json({ error: 'الطلب غير موجود أو لا يمكن تعديله حالياً' });
 
     if (decision === 'DECLINE') {
       await prisma.vehicleTransfer.update({
         where: { id: transferId },
         data: { status: 'CANCELLED' }
       });
-      return res.json({ message: 'تم رفض العرض' });
+
+      // Notify Seller
+      const io = getIO();
+      io.to(`user_${transfer.sellerId}`).emit('new_notification', {
+        id: Math.random().toString(),
+        title: 'رفض عرض بيع',
+        message: `قام المشتري برفض العرض لسيارة ${transfer.vehicle.plateNumber}. تم إلغاء المعاملة.`,
+        createdAt: new Date(),
+        isRead: false
+      });
+
+      return res.json({ message: 'تم رفض العرض وإلغاء المعاملة' });
     }
 
-    // If Accepted
+    // If Accepted -> Move to Waiting for Payment
     const updatedTransfer = await prisma.vehicleTransfer.update({
       where: { id: transferId },
-      data: { status: 'PENDING_EMPLOYEE' },
+      data: { status: 'WAITING_FOR_PAYMENT' },
       include: { vehicle: true, seller: true, buyer: true }
     });
 
@@ -114,39 +134,98 @@ export const handleBuyerDecision = async (req, res) => {
         {
           userId: updatedTransfer.sellerId,
           title: 'قبول عرض بيع',
-          message: `وافق المشتري على عرضك لسيارة ${updatedTransfer.vehicle.plateNumber}. الطلب الآن قيد المراجعة الحكومية.`
+          message: `وافق المشتري على عرضك لسيارة ${updatedTransfer.vehicle.plateNumber}. المعاملة بانتظار إرسال إثبات الدفع البنكي من قبل المشتري.`
         },
         {
           userId: updatedTransfer.buyerId,
           title: 'تثبيت طلب شراء',
-          message: `لقد قبلت عرض الشراء لسيارة ${updatedTransfer.vehicle.plateNumber}. الطلب الآن قيد المراجعة الحكومية.`
+          message: `لقد قبلت عرض الشراء لسيارة ${updatedTransfer.vehicle.plateNumber}. يرجى إدخال رقم الحوالة البنكية لتثبيت المعاملة.`
         }
       ]
     });
 
-    // Notify Employees (Real-time)
     const io = getIO();
-    io.to('employee_room').emit('new_vehicle_transfer_task', { id: transferId });
 
     // Notify Seller & Buyer (Real-time)
     io.to(`user_${updatedTransfer.sellerId}`).emit('new_notification', { 
       id: Math.random().toString(), 
       title: 'قبول عرض بيع', 
-      message: `وافق المشتري على عرضك لسيارة ${updatedTransfer.vehicle.plateNumber}. الطلب الآن قيد المراجعة الحكومية.`,
+      message: `وافق المشتري على عرضك لسيارة ${updatedTransfer.vehicle.plateNumber}. بانتظار إرسال إثبات الدفع البنكي.`,
       createdAt: new Date(),
       isRead: false
     });
     io.to(`user_${updatedTransfer.buyerId}`).emit('new_notification', { 
       id: Math.random().toString(),
       title: 'تثبيت طلب شراء', 
-      message: `لقد قبلت عرض الشراء لسيارة ${updatedTransfer.vehicle.plateNumber}. الطلب الآن قيد المراجعة الحكومية.`,
+      message: `لقد قبلت عرض الشراء لسيارة ${updatedTransfer.vehicle.plateNumber}. يرجى تزويدنا برقم الإشعار البنكي.`,
       createdAt: new Date(),
       isRead: false
     });
 
-    res.json({ message: 'تم قبول العرض، الطلب الآن قيد المراجعة الحكومية' });
+    res.json({ message: 'تم قبول العرض، يرجى تقديم إثبات الدفع البنكي لتثبيت المعاملة' });
   } catch (error) {
     res.status(500).json({ error: 'خطأ' });
+  }
+};
+
+export const submitBankProof = async (req, res) => {
+  const { transferId, referenceNumber } = req.body;
+  const buyerId = req.user.userId;
+
+  try {
+    const transfer = await prisma.vehicleTransfer.findUnique({
+      where: { id: transferId },
+      include: { seller: true, vehicle: true }
+    });
+
+    if (!transfer || transfer.buyerId !== buyerId) {
+      return res.status(404).json({ error: 'المعاملة غير موجودة' });
+    }
+
+    // 1. Verify with Simulated Bank
+    const bankTx = await prisma.bankTransaction.findUnique({
+      where: { referenceNumber }
+    });
+
+    if (!bankTx) {
+      return res.status(400).json({ error: 'رقم الإشعار البنكي غير صحيح أو لم يتم العثور عليه في سجلات المصرف المركزي' });
+    }
+
+    // 2. Cross-verify data (Sender, Receiver, Amount)
+    const buyerNationalId = req.user.nationalId;
+    const sellerNationalId = transfer.seller.nationalId;
+
+    if (bankTx.senderNationalId !== buyerNationalId || 
+        bankTx.receiverNationalId !== sellerNationalId || 
+        bankTx.amount < transfer.price) {
+      return res.status(400).json({ error: 'بيانات الحوالة البنكية لا تتطابق مع أطراف المعاملة أو المبلغ المتفق عليه' });
+    }
+
+    // 3. Move to Government Review
+    await prisma.vehicleTransfer.update({
+      where: { id: transferId },
+      data: { 
+        status: 'PENDING_EMPLOYEE',
+        bankTransactionId: referenceNumber
+      }
+    });
+
+    // Notify Employees
+    getIO().to('employee_room').emit('new_vehicle_transfer_task', { id: transferId });
+    
+    // Notify Seller
+    getIO().to(`user_${transfer.sellerId}`).emit('new_notification', {
+      id: Math.random().toString(),
+      title: 'إشعار بنكي مؤكد',
+      message: `قام المشتري بإرسال حوالة بنكية بقيمة ${transfer.price} ل.س. الطلب الآن قيد التدقيق الحكومي النهائي.`,
+      createdAt: new Date(),
+      isRead: false
+    });
+
+    res.json({ message: 'تم التحقق من الحوالة البنكية بنجاح. المعاملة الآن قيد التدقيق الحكومي النهائي.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'خطأ في معالجة التحقق البنكي' });
   }
 };
 
@@ -166,7 +245,10 @@ export const getIncomingTransfers = async (req, res) => {
   const userId = req.user.userId;
   try {
     const transfers = await prisma.vehicleTransfer.findMany({
-      where: { buyerId: userId, status: 'PENDING_BUYER' },
+      where: { 
+        buyerId: userId, 
+        status: { in: ['PENDING_BUYER', 'WAITING_FOR_PAYMENT'] } 
+      },
       include: { vehicle: true, seller: true }
     });
     res.json(transfers);

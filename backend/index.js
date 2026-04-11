@@ -8,6 +8,7 @@ import civilRoutes from './src/routes/civil.js';
 import citizenRoutes from './src/routes/citizen.js';
 import trafficRoutes from './src/routes/traffic.js';
 import taxRoutes from './src/routes/tax.js';
+import bankRoutes from './src/routes/bank.js';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use('/api/civil', civilRoutes);
 app.use('/api/citizen', citizenRoutes);
 app.use('/api/traffic', trafficRoutes);
 app.use('/api/tax', taxRoutes);
+app.use('/api/bank', bankRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Government System Backend is Online', timestamp: new Date() });

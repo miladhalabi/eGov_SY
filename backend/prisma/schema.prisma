@@ -23,6 +23,7 @@ enum RegistrationStatus {
 
 enum VehicleTransferStatus {
   PENDING_BUYER
+  WAITING_FOR_PAYMENT
   PENDING_EMPLOYEE
   COMPLETED
   REJECTED
@@ -35,6 +36,8 @@ model User {
   password         String
   fullName         String
   role             Role     @default(CITIZEN)
+  bankPin          String?
+  bankBalance      Float    @default(50000000)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -160,6 +163,7 @@ model VehicleTransfer {
   buyerNationalId   String?
   status            VehicleTransferStatus @default(PENDING_BUYER)
   price             Float?
+  bankTransactionId String?
   rejectionReason   String?
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
@@ -184,4 +188,13 @@ model Appointment {
   date        DateTime
   timeSlot    String
   createdAt   DateTime @default(now())
+}
+
+model BankTransaction {
+  id                String   @id @default(uuid())
+  referenceNumber   String   @unique
+  senderNationalId  String
+  receiverNationalId String
+  amount            Float
+  createdAt         DateTime @default(now())
 }

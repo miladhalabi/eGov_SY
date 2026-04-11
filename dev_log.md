@@ -68,6 +68,7 @@
 * **Prisma Type Fix:** Resolved a validation error during bank transfers by explicitly converting amount strings to floats before performing database decrements.
 * **Self-Selling Prevention:** Added logic to block vehicle transfers if the buyer's National ID matches the seller's, ensuring legal and logical consistency in car ownership changes.
 * **Institutional Separation (The Bank Portal):** Implemented a complete "Commercial Bank of Syria" simulation. The bank operates as a separate entity with its own database logic and security layer.
+* **Unified Payment Ecosystem:** Migrated all financial transactions (Traffic Fines, Property Taxes, Vehicle Purchases) to the Banking System. Citizens must now perform a formal bank transfer to the "Government Treasury" (ID: 0000000000) and provide the reference code to settle any government debt.
 * **Secondary Security (Master Key):** Added a "Bank PIN" system. Even if a hacker accesses the government portal, they cannot perform financial transfers without the secondary 6-digit PIN, ensuring the safety of citizen assets.
 * **Dynamic Financial Handshake:** Citizens can now perform real transfers in the Bank Portal, receive unique reference numbers, and use them to finalize vehicle transfers in the Traffic section.
 

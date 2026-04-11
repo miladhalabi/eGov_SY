@@ -37,13 +37,19 @@ function TaxDashboard() {
   };
 
   const handlePay = async (id) => {
-    if (!window.confirm('هل أنت متأكد من رغبتك في تسديد هذا المبلغ إلكترونياً؟')) return;
+    const ref = window.prompt('يرجى إدخال رقم الإشعار البنكي المسدد لخزينة الدولة (0000000000):');
+    if (!ref) return;
+
     setPayingId(id);
     try {
-      await axios.post('http://localhost:5000/api/tax/pay', { recordId: id }, {
+      await axios.post('http://localhost:5000/api/tax/pay', { 
+        recordId: id,
+        bankReference: ref
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchStatus();
+      alert('تم التسديد بنجاح');
     } catch (e) {
       alert(e.response?.data?.error || 'فشلت عملية الدفع');
     } finally {

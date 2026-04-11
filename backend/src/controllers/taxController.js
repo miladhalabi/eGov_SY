@@ -30,7 +30,7 @@ export const getTaxStatus = async (req, res) => {
 };
 
 export const payRecord = async (req, res) => {
-  const { recordId } = req.body;
+  const { recordId, bankReference } = req.body;
   const { nationalId } = req.user;
 
   try {
@@ -41,15 +41,33 @@ export const payRecord = async (req, res) => {
     if (!record) return res.status(404).json({ error: 'السجل غير موجود' });
     if (record.isPaid) return res.status(400).json({ error: 'هذا السجل مسدد مسبقاً' });
 
-    // Simulate payment processing...
+    // 1. Verify Bank Transaction
+    const bankTx = await prisma.bankTransaction.findUnique({
+      where: { referenceNumber: bankReference }
+    });
+
+    if (!bankTx) {
+      return res.status(400).json({ error: 'رقم الإشعار البنكي غير صحيح' });
+    }
+
+    // 2. Validate payment details
+    // Must be from current user to Government Treasury (0000000000)
+    if (bankTx.senderNationalId !== nationalId || 
+        bankTx.receiverNationalId !== '0000000000' || 
+        bankTx.amount < record.amount) {
+      return res.status(400).json({ error: 'بيانات الحوالة لا تتطابق مع التكليف المالي (يجب أن يكون المستلم هو خزينة الدولة والمبلغ مطابق)' });
+    }
+
+    // 3. Mark as paid
     await prisma.financialRecord.update({
       where: { id: recordId },
       data: { isPaid: true }
     });
 
-    res.json({ message: 'تمت عملية الدفع بنجاح وتحديث السجل المالي' });
+    res.json({ message: 'تم تسديد الذمة المالية بنجاح وتحديث السجل' });
   } catch (e) {
-    res.status(500).json({ error: 'خطأ في معالجة الدفع' });
+    console.error(e);
+    res.status(500).json({ error: 'خطأ في معالجة الدفع البنكي' });
   }
 };
 

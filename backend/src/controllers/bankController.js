@@ -66,9 +66,11 @@ export const performBankTransfer = async (req, res) => {
     const numericAmount = parseFloat(amount);
     if (sender.bankBalance < numericAmount) return res.status(400).json({ error: 'الرصيد غير كافٍ' });
 
-    // 3. Find Receiver
-    const receiver = await prisma.civilRecord.findUnique({ where: { nationalId: receiverNationalId } });
-    if (!receiver) return res.status(404).json({ error: 'رقم المستلم غير موجود في السجل المدني' });
+    // 3. Find Receiver (Allow 0000000000 for Government Payments)
+    if (receiverNationalId !== '0000000000') {
+      const receiver = await prisma.civilRecord.findUnique({ where: { nationalId: receiverNationalId } });
+      if (!receiver) return res.status(404).json({ error: 'رقم المستلم غير موجود في السجل المدني' });
+    }
 
     // 4. Perform Transaction (Atomic)
     const refNum = 'CBS-' + Math.random().toString(36).substring(2, 10).toUpperCase();

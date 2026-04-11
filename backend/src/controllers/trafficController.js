@@ -102,13 +102,47 @@ export const handleBuyerDecision = async (req, res) => {
     }
 
     // If Accepted
-    await prisma.vehicleTransfer.update({
+    const updatedTransfer = await prisma.vehicleTransfer.update({
       where: { id: transferId },
-      data: { status: 'PENDING_EMPLOYEE' }
+      data: { status: 'PENDING_EMPLOYEE' },
+      include: { vehicle: true, seller: true, buyer: true }
     });
 
-    // Notify Employees
-    getIO().to('employee_room').emit('new_vehicle_transfer_task', { id: transferId });
+    // Create Persistent Notifications for both parties
+    await prisma.notification.createMany({
+      data: [
+        {
+          userId: updatedTransfer.sellerId,
+          title: 'قبول عرض بيع',
+          message: `وافق المشتري على عرضك لسيارة ${updatedTransfer.vehicle.plateNumber}. الطلب الآن قيد المراجعة الحكومية.`
+        },
+        {
+          userId: updatedTransfer.buyerId,
+          title: 'تثبيت طلب شراء',
+          message: `لقد قبلت عرض الشراء لسيارة ${updatedTransfer.vehicle.plateNumber}. الطلب الآن قيد المراجعة الحكومية.`
+        }
+      ]
+    });
+
+    // Notify Employees (Real-time)
+    const io = getIO();
+    io.to('employee_room').emit('new_vehicle_transfer_task', { id: transferId });
+
+    // Notify Seller & Buyer (Real-time)
+    io.to(`user_${updatedTransfer.sellerId}`).emit('new_notification', { 
+      id: Math.random().toString(), 
+      title: 'قبول عرض بيع', 
+      message: `وافق المشتري على عرضك لسيارة ${updatedTransfer.vehicle.plateNumber}. الطلب الآن قيد المراجعة الحكومية.`,
+      createdAt: new Date(),
+      isRead: false
+    });
+    io.to(`user_${updatedTransfer.buyerId}`).emit('new_notification', { 
+      id: Math.random().toString(),
+      title: 'تثبيت طلب شراء', 
+      message: `لقد قبلت عرض الشراء لسيارة ${updatedTransfer.vehicle.plateNumber}. الطلب الآن قيد المراجعة الحكومية.`,
+      createdAt: new Date(),
+      isRead: false
+    });
 
     res.json({ message: 'تم قبول العرض، الطلب الآن قيد المراجعة الحكومية' });
   } catch (error) {
@@ -128,7 +162,21 @@ export const getPendingTransfers = async (req, res) => {
   } catch (error) { res.status(500).json({ error: 'خطأ' }); }
 };
 
+export const getIncomingTransfers = async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    const transfers = await prisma.vehicleTransfer.findMany({
+      where: { buyerId: userId, status: 'PENDING_BUYER' },
+      include: { vehicle: true, seller: true }
+    });
+    res.json(transfers);
+  } catch (error) {
+    res.status(500).json({ error: 'خطأ في جلب العروض القادمة' });
+  }
+};
+
 export const finalizeTransfer = async (req, res) => {
+  if (req.user.role !== 'EMPLOYEE') return res.status(403).json({ error: 'غير مسموح للمواطنين تنفيذ هذه العملية' });
   const { transferId, status, reason } = req.body; // 'COMPLETED' or 'REJECTED'
   
   try {
@@ -138,10 +186,26 @@ export const finalizeTransfer = async (req, res) => {
     });
 
     if (status === 'REJECTED') {
-      await prisma.vehicleTransfer.update({
+      const updated = await prisma.vehicleTransfer.update({
         where: { id: transferId },
-        data: { status: 'REJECTED', rejectionReason: reason }
+        data: { status: 'REJECTED', rejectionReason: reason },
+        include: { vehicle: true }
       });
+      
+      // Notify both parties of rejection
+      await prisma.notification.createMany({
+        data: [
+          { userId: updated.sellerId, title: 'رفض نقل ملكية', message: `تم رفض طلب نقل ملكية السيارة ${updated.vehicle.plateNumber}. السبب: ${reason}` },
+          { userId: updated.buyerId, title: 'رفض نقل ملكية', message: `تم رفض طلب شراء السيارة ${updated.vehicle.plateNumber}. السبب: ${reason}` }
+        ]
+      });
+
+      const io = getIO();
+      const notifData = (title, msg) => ({ id: Math.random().toString(), title, message: msg, createdAt: new Date(), isRead: false });
+      
+      io.to(`user_${updated.sellerId}`).emit('new_notification', notifData('تحديث معاملة', `تم رفض نقل ملكية السيارة ${updated.vehicle.plateNumber}`));
+      io.to(`user_${updated.buyerId}`).emit('new_notification', notifData('تحديث معاملة', `تم رفض طلب الشراء للسيارة ${updated.vehicle.plateNumber}`));
+
       return res.json({ message: 'تم رفض المعاملة' });
     }
 
@@ -162,6 +226,12 @@ export const finalizeTransfer = async (req, res) => {
         ]
       })
     ]);
+
+    const io = getIO();
+    const notifData = (title, msg) => ({ id: Math.random().toString(), title, message: msg, createdAt: new Date(), isRead: false });
+    
+    io.to(`user_${transfer.sellerId}`).emit('new_notification', notifData('عملية ناجحة', `تم بيع المركبة ${transfer.vehicle.plateNumber} بنجاح`));
+    io.to(`user_${transfer.buyerId}`).emit('new_notification', notifData('عملية ناجحة', `تم شراء المركبة ${transfer.vehicle.plateNumber} بنجاح`));
 
     res.json({ message: 'تم نقل الملكية وتحديث السجلات بنجاح' });
   } catch (error) {

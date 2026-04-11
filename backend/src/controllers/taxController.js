@@ -29,6 +29,30 @@ export const getTaxStatus = async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ' }); }
 };
 
+export const payRecord = async (req, res) => {
+  const { recordId } = req.body;
+  const { nationalId } = req.user;
+
+  try {
+    const record = await prisma.financialRecord.findFirst({
+      where: { id: recordId, nationalId }
+    });
+
+    if (!record) return res.status(404).json({ error: 'السجل غير موجود' });
+    if (record.isPaid) return res.status(400).json({ error: 'هذا السجل مسدد مسبقاً' });
+
+    // Simulate payment processing...
+    await prisma.financialRecord.update({
+      where: { id: recordId },
+      data: { isPaid: true }
+    });
+
+    res.json({ message: 'تمت عملية الدفع بنجاح وتحديث السجل المالي' });
+  } catch (e) {
+    res.status(500).json({ error: 'خطأ في معالجة الدفع' });
+  }
+};
+
 export const downloadClearance = async (req, res) => {
   const { nationalId } = req.user;
   try {

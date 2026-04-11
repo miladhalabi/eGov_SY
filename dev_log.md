@@ -50,4 +50,13 @@
     * Click "عرض الوثيقة" to see the uploaded file in a new tab.
     * Click "موافقة" to approve.
 
-**Next Step:** Step 6 - Traffic Domain (Vehicle Status & Multi-party Ownership Transfer).
+**[Step 8 Completed: Tax Domain & Cross-Domain Integration]**
+* **Tax Dashboard:** Citizens can now view their financial record and total debt in real-time.
+* **Official Clearance:** Implemented Arabic PDF generation for "Financial Clearance Certificates" using the GESS font and government branding.
+* **Unified Request Tracking:** "My Requests" now includes vehicle transfers with detailed status tracking (Pending Buyer, Pending Employee, Completed).
+* **Traffic-Tax Linkage:** Verified that vehicle transfers are automatically blocked if the citizen has any unpaid financial records in the Tax domain.
+* **Digital Payment Simulation:** Integrated a "Pay Now" feature in the Tax Dashboard, allowing citizens to settle fines and taxes electronically, which instantly unlocks blocked services (like vehicle transfers).
+* **Persistence Bug Fix:** Resolved an issue where vehicle transfer pop-ups disappeared on page refresh. Implemented a persistent state check on component mount to recover active offers from the database.
+* **Full-Cycle Notifications:** Both buyer and seller now receive real-time and persistent notifications at every stage: Offer Accepted, Under Government Review, Approved/Completed, or Rejected with Reason.
+
+**Next Step:** Final Polish & System-wide Verification.

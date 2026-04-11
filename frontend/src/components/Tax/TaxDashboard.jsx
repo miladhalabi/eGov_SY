@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 function TaxDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [payingId, setPayingId] = useState(null);
   const token = useAuthStore((state) => state.token);
 
   const fetchStatus = async () => {
@@ -33,6 +34,21 @@ function TaxDashboard() {
       link.click();
       document.body.removeChild(link);
     } catch (e) { alert('خطأ في استخراج الوثيقة'); }
+  };
+
+  const handlePay = async (id) => {
+    if (!window.confirm('هل أنت متأكد من رغبتك في تسديد هذا المبلغ إلكترونياً؟')) return;
+    setPayingId(id);
+    try {
+      await axios.post('http://localhost:5000/api/tax/pay', { recordId: id }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchStatus();
+    } catch (e) {
+      alert(e.response?.data?.error || 'فشلت عملية الدفع');
+    } finally {
+      setPayingId(null);
+    }
   };
 
   if (loading) return <div className="text-center py-20">جاري فحص السجل المالي...</div>;
@@ -95,7 +111,16 @@ function TaxDashboard() {
                     {r.isPaid ? (
                       <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold">مسدد</span>
                     ) : (
-                      <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-bold">غير مسدد</span>
+                      <div className="flex items-center gap-3">
+                        <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-bold">غير مسدد</span>
+                        <button 
+                          onClick={() => handlePay(r.id)}
+                          disabled={payingId === r.id}
+                          className="text-[10px] font-bold text-gov-secondary hover:text-gov-primary border-b border-gov-secondary hover:border-gov-primary transition-all disabled:opacity-50"
+                        >
+                          {payingId === r.id ? 'جاري...' : 'تسديد الآن'}
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

@@ -9,14 +9,35 @@ function TransferPopup() {
   const [offer, setOffer] = useState(null);
 
   useEffect(() => {
-    if (!socket) return;
+    // 1. Check for existing pending offers on mount (prevents loss on refresh)
+    const checkExistingOffers = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/traffic/incoming-transfers', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data && res.data.length > 0) {
+          const t = res.data[0];
+          setOffer({
+            transferId: t.id,
+            sellerName: t.seller.fullName,
+            vehicleModel: t.vehicle.model,
+            plateNumber: t.vehicle.plateNumber,
+            price: t.price
+          });
+        }
+      } catch (e) { console.error("Error fetching offers:", e); }
+    };
 
+    if (token) checkExistingOffers();
+
+    // 2. Listen for real-time offers
+    if (!socket) return;
     socket.on('vehicle_transfer_offer', (data) => {
       setOffer(data);
     });
 
     return () => socket.off('vehicle_transfer_offer');
-  }, [socket]);
+  }, [socket, token]);
 
   const respond = async (decision) => {
     try {

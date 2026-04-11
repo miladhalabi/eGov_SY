@@ -227,12 +227,7 @@ function App() {
                    </div>
                 )}
                 
-                {activeCategory === 'TAX' && (
-                   <div className="gov-card p-20 text-center">
-                      <h2 className="text-3xl font-bold text-gov-secondary mb-4">الخدمات المالية والضرائب</h2>
-                      <p className="text-gray-500">سيتم توفير براءات الذمة وخدمات التحصيل المالي قريباً.</p>
-                   </div>
-                )}
+                {activeCategory === 'TAX' && <TaxDashboard />}
               </div>
             )}
           </div>

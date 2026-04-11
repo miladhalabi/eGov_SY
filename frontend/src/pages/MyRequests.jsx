@@ -26,11 +26,17 @@ function MyRequests({ onBack }) {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'PENDING':
-        return <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-[10px] font-bold">قيد المراجعة</span>;
+      case 'PENDING_EMPLOYEE':
+        return <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-[10px] font-bold">قيد المراجعة الحكومية</span>;
+      case 'PENDING_BUYER':
+        return <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold">بانتظار الطرف الآخر</span>;
       case 'APPROVED':
+      case 'COMPLETED':
         return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold">مكتمل</span>;
       case 'REJECTED':
         return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-bold">مرفوض</span>;
+      case 'CANCELLED':
+        return <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-[10px] font-bold">ملغى</span>;
       default:
         return <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-[10px] font-bold">{status}</span>;
     }

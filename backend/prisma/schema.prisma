@@ -157,6 +157,7 @@ model VehicleTransfer {
   seller            User                  @relation("SellerTransfers", fields: [sellerId], references: [id])
   buyerId           String
   buyer             User                  @relation("BuyerTransfers", fields: [buyerId], references: [id])
+  buyerNationalId   String?
   status            VehicleTransferStatus @default(PENDING_BUYER)
   price             Float?
   rejectionReason   String?

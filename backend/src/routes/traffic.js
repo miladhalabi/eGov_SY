@@ -4,7 +4,8 @@ import {
   initiateTransfer, 
   handleBuyerDecision,
   getPendingTransfers,
-  finalizeTransfer
+  finalizeTransfer,
+  getIncomingTransfers
 } from '../controllers/trafficController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 
@@ -12,6 +13,7 @@ const router = express.Router();
 
 // Citizen routes
 router.get('/my-vehicles', authenticate, getMyVehicles);
+router.get('/incoming-transfers', authenticate, getIncomingTransfers);
 router.post('/initiate-transfer', authenticate, initiateTransfer);
 router.post('/respond-transfer', authenticate, handleBuyerDecision);
 

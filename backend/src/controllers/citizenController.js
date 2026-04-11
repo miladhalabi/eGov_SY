@@ -23,7 +23,19 @@ export const getMyRequests = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    // 3. Format them for a unified view
+    // 3. Get Vehicle Transfers
+    const transfers = await prisma.vehicleTransfer.findMany({
+      where: {
+        OR: [
+          { sellerId: userId },
+          { buyerId: userId }
+        ]
+      },
+      include: { vehicle: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // 4. Format them for a unified view
     const formattedBirths = births.map(b => ({
       id: b.id,
       service: 'تسجيل ولادة',
@@ -42,8 +54,17 @@ export const getMyRequests = async (req, res) => {
       date: m.createdAt
     }));
 
+    const formattedTransfers = transfers.map(t => ({
+      id: t.id,
+      service: 'نقل ملكية مركبة',
+      details: `${t.sellerId === userId ? 'بيع' : 'شراء'} ${t.vehicle.model} (${t.vehicle.plateNumber})`,
+      status: t.status,
+      reason: t.rejectionReason,
+      date: t.createdAt
+    }));
+
     // Combine and sort by date
-    const allRequests = [...formattedBirths, ...formattedMarriages].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const allRequests = [...formattedBirths, ...formattedMarriages, ...formattedTransfers].sort((a, b) => new Date(b.date) - new Date(a.date));
     
     res.json(allRequests);
   } catch (error) {

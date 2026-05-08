@@ -16,11 +16,11 @@ Use this checklist to track the progress of each section in the graduation proje
 - [x] **2.1 E-Gov Maturity:** Define the stages of digital government.
 - [x] **2.2 QR Verification:** Research techniques for anti-forgery in digital docs.
 - [x] **2.3 WebSockets/State Machines:** Study real-time transaction synchronization.
-- [ ] **2.4 Syrian Digital Infrastructure:** Analysis of existing Syrian digital initiatives and identification of the "Research Gap."
-- [ ] **2.5 Comparative Analysis:** Create a table comparing manual vs. منصة الحكومة الإلكترونية.
+- [x] **2.4 Syrian Digital Infrastructure:** Analysis of existing Syrian digital initiatives and identification of the "Research Gap."
+- [x] **2.5 Comparative Analysis:** Create a table comparing manual vs. منصة الحكومة الإلكترونية.
 
 ## Chapter 3 — Requirement Analysis (SRS)
-- [ ] **3.1 Stakeholders:** Identify Citizen, Employee, and Bank roles.
+- [x] **3.1 Stakeholders:** Identify Citizen, Employee, and Bank roles.
 - [ ] **3.2 Functional Requirements:** 🛠 Extract logic for Civil, Traffic, Tax, and Real Estate (الخدمات العقارية المحدودة) modules.
 - [ ] **3.3 Non-Functional Requirements:** Document Security, Performance, and RTL standards.
 - [ ] **3.4 Use Case Analysis:** Write detailed narratives for "Car Transfer" and "Birth Registration."

@@ -21,35 +21,33 @@ Use this checklist to track the progress of each section in the graduation proje
 
 ## Chapter 3 — Requirement Analysis (SRS)
 - [x] **3.1 Stakeholders:** Identify Citizen, Employee, and Bank roles.
-- [ ] **3.2 Functional Requirements:** 🛠 Extract logic for Civil, Traffic, Tax, and Real Estate (الخدمات العقارية المحدودة) modules.
-- [ ] **3.3 Non-Functional Requirements:** Document Security, Performance, and RTL standards.
-- [ ] **3.4 Use Case Analysis:** Write detailed narratives for "Car Transfer" and "Birth Registration."
-- [ ] **3.5 Use Case Diagrams:** (Visual) Actor-System interactions.
-- [ ] **3.6 Activity Diagrams:** (Visual) Workflow of the Transfer Handshake.
+- [x] **3.2 Functional Requirements:** 🛠 Extract logic for Civil, Traffic, Tax, and Real Estate (الخدمات العقارية المحدودة) modules.
+- [x] **3.3 Non-Functional Requirements:** Document Security, Performance, and RTL standards.
+- [x] **3.4 Use Case Analysis:** Write detailed narratives for all modules.
+- [x] **3.5 Use Case Diagrams:** (Visual) Actor-System interactions.
+- [x] **3.6 Activity Diagrams:** (Visual) Workflow of the Transfer Handshake.
+- [x] **3.7 Sequence Diagrams:** (Visual) Sequence of events for real-time transactions.
 
 ## Chapter 4 — System Design (SDD)
-- [ ] **4.1 Architecture:** 🛠 Document Monorepo structure and Socket.io gateway.
-- [ ] **4.2 Database Design:** 🛠 Generate ERD and Data Dictionary from `schema.prisma`.
-- [ ] **4.3 UI/UX Design:** Document the Semantic Design tokens and GESS font usage.
-- [ ] **4.4 Security Architecture:** Document the JWT flow and Bank PIN secondary layer.
+- [x] **4.1 Architecture:** 🛠 Document Monorepo structure and Socket.io gateway.
+- [x] **4.2 Database Design:** 🛠 Generate ERD and Data Dictionary from `schema.prisma`.
+- [x] **4.3 UI/UX Design:** Document the Semantic Design tokens and GESS font usage.
+- [x] **4.4 Deployment Architecture:** Description of infrastructure and PWA.
+- [x] **4.5 Security Architecture:** Document the JWT flow and Bank PIN secondary layer.
 
 ## Chapter 5 — Implementation & Methodology
-- [ ] **5.1 Technology Stack:** List versions of Node, React, Prisma, Tailwind, etc.
-- [ ] **5.2 Smart Queueing & Transfers:** 🛠 Explain the implementation of the Real-time State Machine.
-- [ ] **5.3 Document Engineering:** 🛠 Detail the Arabic PDF generation and QR injection code.
-- [ ] **5.4 API Design:** 🛠 Document RESTful endpoint patterns.
-- [ ] **5.5 State Management:** Explain the Zustand store and frontend sync logic.
+- [x] **5.1 Technology Stack:** List versions of Node, React, Prisma, Tailwind, etc.
+- [x] **5.2 Smart Queueing & Transfers:** 🛠 Explain the implementation of the Real-time State Machine.
+- [x] **5.3 API Design:** 🛠 Document RESTful endpoint patterns.
+- [x] **5.4 State Management:** Explain the Zustand store and frontend sync logic.
+- [x] **5.5 Real-Time Synchronization Flow:** 🛠 Detailed explanation of Socket events.
+- [x] **5.6 Document Engineering:** 🛠 Detail the Arabic PDF generation and QR injection code.
 
-## Chapter 6 — Testing & Evaluation
-- [ ] **6.1 Testing Strategy:** Document Unit, Integration, and Manual test plans.
-- [ ] **6.2 Workflow Validation:** 🛠 Demonstrate the "Fine-Blocker" logic test results.
-- [ ] **6.3 Performance Metrics:** Report on socket latency and PDF generation speeds.
-- [ ] **6.4 System Results:** 🛠 Capture high-quality screenshots of all portals.
-
-## Chapter 7 — Conclusion
-- [ ] **7.1 Summary:** Reflect on project achievements vs. objectives.
-- [ ] **7.2 Limitations:** Honest assessment of simulation boundaries.
-- [ ] **7.3 Future Work:** List upcoming modules (Passports, AI Analytics).
+## Chapter 6 — Conclusion
+- [ ] **6.1 Summary:** Reflect on project achievements vs. objectives.
+- [ ] **6.2 Limitations:** Honest assessment of simulation boundaries.
+- [ ] **6.3 Future Work:** List upcoming modules (Passports, AI Analytics).
+- [ ] **6.4 Final Remarks:** Closing academic thoughts.
 
 ## Appendices
 - [ ] **Appendix A:** 🛠 Cleaned `schema.prisma` listing.

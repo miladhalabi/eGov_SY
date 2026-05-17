@@ -10,7 +10,7 @@ export const useNotificationStore = create((set, get) => ({
     if (!token) return;
     set({ loading: true });
     try {
-      const response = await axios.get('http://localhost:5000/api/citizen/notifications', {
+      const response = await axios.get('/api/citizen/notifications', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const unread = response.data.filter(n => !n.isRead).length;
@@ -23,7 +23,7 @@ export const useNotificationStore = create((set, get) => ({
 
   markAllAsRead: async (token) => {
     try {
-      await axios.put('http://localhost:5000/api/citizen/notifications/read', {}, {
+      await axios.put('/api/citizen/notifications/read', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       set({ unreadCount: 0 });

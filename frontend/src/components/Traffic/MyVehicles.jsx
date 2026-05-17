@@ -15,8 +15,8 @@ function MyVehicles() {
   const fetchData = async () => {
     try {
       const [vRes, iRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/traffic/my-vehicles', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:5000/api/traffic/incoming-transfers', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get('/api/traffic/my-vehicles', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('/api/traffic/incoming-transfers', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setVehicles(vRes.data);
       setIncoming(iRes.data);
@@ -30,7 +30,7 @@ function MyVehicles() {
     e.preventDefault();
     setMsg(null);
     try {
-      const res = await axios.post('http://localhost:5000/api/traffic/initiate-transfer', {
+      const res = await axios.post('/api/traffic/initiate-transfer', {
         vehicleId: transferData.vehicleId,
         buyerNationalId: transferData.buyerId,
         price: transferData.price

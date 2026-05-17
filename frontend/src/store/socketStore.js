@@ -7,7 +7,7 @@ export const useSocketStore = create((set, get) => ({
   connect: (token) => {
     if (get().socket) return;
 
-    const socketInstance = io('http://localhost:5000', {
+    const socketInstance = io('', {
       auth: { token }
     });
 

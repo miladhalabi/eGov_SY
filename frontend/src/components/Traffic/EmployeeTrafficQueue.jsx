@@ -11,7 +11,7 @@ function EmployeeTrafficQueue() {
 
   const fetchTransfers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/traffic/pending-transfers', {
+      const res = await axios.get('/api/traffic/pending-transfers', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTransfers(res.data);
@@ -35,7 +35,7 @@ function EmployeeTrafficQueue() {
     }
 
     try {
-      await axios.post('http://localhost:5000/api/traffic/finalize-transfer', {
+      await axios.post('/api/traffic/finalize-transfer', {
         transferId: id, status, reason
       }, { headers: { Authorization: `Bearer ${token}` } });
       fetchTransfers();

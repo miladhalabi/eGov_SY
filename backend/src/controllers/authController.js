@@ -56,6 +56,8 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   const { nationalId, password } = req.body;
 
+  console.log(nationalId , password)
+
   try {
     const user = await prisma.user.findUnique({
       where: { nationalId },

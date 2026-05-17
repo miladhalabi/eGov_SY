@@ -13,8 +13,8 @@ function EmployeeQueue() {
   const fetchData = async () => {
     try {
       const [birthRes, marriageRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/civil/pending-births', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:5000/api/civil/pending-marriages', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get('/api/civil/pending-births', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('/api/civil/pending-marriages', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setBirths(birthRes.data);
       setMarriages(marriageRes.data);
@@ -40,7 +40,7 @@ function EmployeeQueue() {
   const approveBirth = async (id) => {
     if (!window.confirm('موافقة على الولادة؟')) return;
     try {
-      await axios.post('http://localhost:5000/api/civil/approve-birth', { registrationId: id }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('/api/civil/approve-birth', { registrationId: id }, { headers: { Authorization: `Bearer ${token}` } });
       fetchData();
     } catch (e) { alert('خطأ'); }
   };
@@ -49,7 +49,7 @@ function EmployeeQueue() {
     const reason = window.prompt('يرجى إدخال سبب الرفض:');
     if (!reason) return;
     try {
-      await axios.post('http://localhost:5000/api/civil/reject-birth', { registrationId: id, reason }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('/api/civil/reject-birth', { registrationId: id, reason }, { headers: { Authorization: `Bearer ${token}` } });
       fetchData();
     } catch (e) { alert('خطأ'); }
   };
@@ -57,7 +57,7 @@ function EmployeeQueue() {
   const approveMarriage = async (id) => {
     if (!window.confirm('موافقة على تثبيت الزواج؟')) return;
     try {
-      await axios.post('http://localhost:5000/api/civil/approve-marriage', { requestId: id }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('/api/civil/approve-marriage', { requestId: id }, { headers: { Authorization: `Bearer ${token}` } });
       fetchData();
     } catch (e) { alert('خطأ'); }
   };
@@ -66,7 +66,7 @@ function EmployeeQueue() {
     const reason = window.prompt('يرجى إدخال سبب الرفض:');
     if (!reason) return;
     try {
-      await axios.post('http://localhost:5000/api/civil/reject-marriage', { requestId: id, reason }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('/api/civil/reject-marriage', { requestId: id, reason }, { headers: { Authorization: `Bearer ${token}` } });
       fetchData();
     } catch (e) { alert('خطأ'); }
   };
@@ -87,7 +87,7 @@ function EmployeeQueue() {
                 <p className="text-xs text-gray-400 font-mono">رقم العقد: {m.contractNumber}</p>
               </div>
               <div className="flex gap-3">
-                 <a href={`http://localhost:5000/${m.documentPath}`} target="_blank" rel="noreferrer" className="px-4 py-2 border border-gov-secondary rounded-lg text-sm font-bold hover:bg-gov-secondary hover:text-white transition-all">وثيقة العقد</a>
+                 <a href={`/${m.documentPath}`} target="_blank" rel="noreferrer" className="px-4 py-2 border border-gov-secondary rounded-lg text-sm font-bold hover:bg-gov-secondary hover:text-white transition-all">وثيقة العقد</a>
                  <button onClick={() => approveMarriage(m.id)} className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-lg font-bold hover:brightness-125 transition-all">موافقة</button>
                  <button onClick={() => rejectMarriage(m.id)} className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold border border-red-200 hover:bg-red-100 transition-all">رفض</button>
               </div>
@@ -109,7 +109,7 @@ function EmployeeQueue() {
                 <p className="text-[10px] text-gray-400">تاريخ الطلب: {new Date(b.createdAt).toLocaleString('ar-SY')}</p>
               </div>
               <div className="flex gap-3">
-                 <a href={`http://localhost:5000/${b.hospitalDoc}`} target="_blank" rel="noreferrer" className="px-4 py-2 border border-gov-secondary rounded-lg text-sm font-bold hover:bg-gov-secondary hover:text-white transition-all">عرض الشهادة</a>
+                 <a href={`/${b.hospitalDoc}`} target="_blank" rel="noreferrer" className="px-4 py-2 border border-gov-secondary rounded-lg text-sm font-bold hover:bg-gov-secondary hover:text-white transition-all">عرض الشهادة</a>
                  <button onClick={() => approveBirth(b.id)} className="bg-gov-secondary text-gov-primary px-6 py-2 rounded-lg font-bold hover:brightness-125 transition-all">موافقة</button>
                  <button onClick={() => rejectBirth(b.id)} className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold border border-red-200 hover:bg-red-100 transition-all">رفض</button>
               </div>

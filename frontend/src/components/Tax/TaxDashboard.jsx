@@ -10,7 +10,7 @@ function TaxDashboard() {
 
   const fetchStatus = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/tax/status', {
+      const res = await axios.get('/api/tax/status', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setData(res.data);
@@ -22,7 +22,7 @@ function TaxDashboard() {
 
   const downloadClearance = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/tax/clearance-pdf', {
+      const response = await axios.get('/api/tax/clearance-pdf', {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });
@@ -42,7 +42,7 @@ function TaxDashboard() {
 
     setPayingId(id);
     try {
-      await axios.post('http://localhost:5000/api/tax/pay', { 
+      await axios.post('/api/tax/pay', { 
         recordId: id,
         bankReference: ref
       }, {

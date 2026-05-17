@@ -21,7 +21,7 @@ function MarriageRegistrationForm() {
     formData.append('document', file);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/civil/register-marriage', formData, {
+      const response = await axios.post('/api/civil/register-marriage', formData, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

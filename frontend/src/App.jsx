@@ -22,6 +22,10 @@ import TaxDashboard from './components/Tax/TaxDashboard'
 // Bank Components
 import DigitalBank from './components/Bank/DigitalBank'
 
+// PWA Components
+import OfflineBanner from './components/OfflineBanner'
+import MobileNav from './components/MobileNav'
+
 function App() {
   const { user, token, logout } = useAuthStore()
   const { connect, disconnect } = useSocketStore()
@@ -41,7 +45,7 @@ function App() {
     try {
       const endpoint = type === 'family' ? 'family-record' : 'individual-record';
       const urlParams = targetId ? `?nationalId=${targetId}` : '';
-      const response = await axios.get(`http://localhost:5000/api/civil/${endpoint}${urlParams}`, {
+      const response = await axios.get(`/api/civil/${endpoint}${urlParams}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });
@@ -111,26 +115,27 @@ function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-gov-bg flex flex-col font-sans text-right" dir="rtl">
+    <div className="min-h-screen bg-gov-bg flex flex-col font-sans text-right pb-10 md:pb-0" dir="rtl">
       {/* Global Real-time Popups */}
       <TransferPopup />
+      <OfflineBanner />
 
       {/* Top Navbar */}
       <nav className="bg-gov-secondary text-white shadow-2xl border-b-4 border-gov-primary sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3 md:gap-4">
             <div className="cursor-pointer transition-transform hover:scale-110" onClick={() => {setView('DASHBOARD'); setActiveCategory(null);}}>
-               <img src={logo} alt="Logo" className="w-12 h-12 drop-shadow-md" />
+               <img src={logo} alt="Logo" className="w-10 h-10 md:w-12 md:h-12 drop-shadow-md" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gov-primary leading-tight">بوابة الحكومة الإلكترونية</h1>
-              <p className="text-[10px] text-gray-300 uppercase tracking-widest">الجمهورية العربية السورية</p>
+              <h1 className="text-lg md:text-xl font-bold text-gov-primary leading-tight">بوابة الحكومة الإلكترونية</h1>
+              <p className="text-[8px] md:text-[10px] text-gray-300 uppercase tracking-widest">الجمهورية العربية السورية</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4 sm:gap-8">
             {user.role === 'CITIZEN' && (
-              <div className="flex items-center gap-3 border-l border-white/10 pl-6 ml-2">
+              <div className="hidden md:flex items-center gap-3 border-l border-white/10 pl-6 ml-2">
                 <button 
                   onClick={() => setView('REQUESTS')}
                   className={`text-sm font-bold transition-all ${view === 'REQUESTS' ? 'text-gov-primary' : 'text-gray-300 hover:text-white'}`}
@@ -141,13 +146,13 @@ function App() {
               </div>
             )}
 
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <p className="text-sm font-bold text-gov-primary">{user.fullName}</p>
               <p className="text-[10px] text-gray-400">الرقم الوطني: {user.nationalId}</p>
             </div>
             <button 
               onClick={logout}
-              className="bg-gov-primary text-gov-secondary px-4 py-2 rounded-xl text-xs font-bold hover:brightness-110 transition-all"
+              className="hidden md:block bg-gov-primary text-gov-secondary px-4 py-2 rounded-xl text-xs font-bold hover:brightness-110 transition-all"
             >
               خروج
             </button>
@@ -248,9 +253,16 @@ function App() {
         )}
       </main>
 
-      <footer className="bg-white/50 border-t border-gray-200 py-10 px-6 text-center mt-auto">
+      <footer className="bg-white/50 border-t border-gray-200 py-10 px-6 text-center mt-auto hidden md:block">
         <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">نظام الحكومة الإلكترونية الموحد © 2026</p>
       </footer>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav 
+        view={view} 
+        setView={setView} 
+        setActiveCategory={setActiveCategory} 
+      />
     </div>
   )
 }

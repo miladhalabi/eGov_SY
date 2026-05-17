@@ -15,7 +15,7 @@ function DigitalBank() {
 
   const fetchBankData = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/bank/data', {
+      const res = await axios.get('/api/bank/data', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setBankData(res.data);
@@ -26,7 +26,7 @@ function DigitalBank() {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/bank/history', {
+      const res = await axios.get('/api/bank/history', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setHistory(res.data);
@@ -38,7 +38,7 @@ function DigitalBank() {
   const handleUnlock = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/bank/verify-pin', { pin }, {
+      await axios.post('/api/bank/verify-pin', { pin }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsLocked(false);
@@ -49,7 +49,7 @@ function DigitalBank() {
   const handleSetup = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/bank/setup-pin', { pin }, {
+      await axios.post('/api/bank/setup-pin', { pin }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setShowSetup(false);
@@ -62,7 +62,7 @@ function DigitalBank() {
     e.preventDefault();
     setMsg(null);
     try {
-      const res = await axios.post('http://localhost:5000/api/bank/transfer', { ...transferData, pin }, {
+      const res = await axios.post('/api/bank/transfer', { ...transferData, pin }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMsg({ type: 'success', text: `تمت الحوالة! رقم الإشعار: ${res.data.referenceNumber}` });

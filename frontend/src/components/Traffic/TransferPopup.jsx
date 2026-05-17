@@ -26,7 +26,7 @@ function TransferPopup() {
     // 1. Check for existing pending offers on mount (prevents loss on refresh)
     const checkExistingOffers = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/traffic/incoming-transfers', {
+        const res = await axios.get('/api/traffic/incoming-transfers', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data && res.data.length > 0 && !activeOffer) {
@@ -58,7 +58,7 @@ function TransferPopup() {
 
   const respond = async (decision) => {
     try {
-      await axios.post('http://localhost:5000/api/traffic/respond-transfer', {
+      await axios.post('/api/traffic/respond-transfer', {
         transferId: activeOffer.transferId,
         decision
       }, { headers: { Authorization: `Bearer ${token}` } });
@@ -75,7 +75,7 @@ function TransferPopup() {
   const submitPayment = async () => {
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/traffic/submit-bank-proof', {
+      await axios.post('/api/traffic/submit-bank-proof', {
         transferId: activeOffer.transferId,
         referenceNumber: refNum
       }, { headers: { Authorization: `Bearer ${token}` } });

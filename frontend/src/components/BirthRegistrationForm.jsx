@@ -16,7 +16,7 @@ function BirthRegistrationForm() {
   useEffect(() => {
     const fetchSpouses = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/civil/spouses', {
+        const response = await axios.get('/api/civil/spouses', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSpouses(response.data);
@@ -46,7 +46,7 @@ function BirthRegistrationForm() {
     formData.append('hospitalDoc', file);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/civil/register-birth', formData, {
+      const response = await axios.post('/api/civil/register-birth', formData, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

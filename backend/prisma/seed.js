@@ -79,7 +79,7 @@ async function main() {
   });
 
   // 5. Create another Citizen (Hoda - the Buyer)
-  await prisma.user.upsert({
+  const userHoda = await prisma.user.upsert({
     where: { nationalId: '4444444444' },
     update: {
       bankPin: pinHash,
@@ -109,6 +109,24 @@ async function main() {
     });
   }
 
+  const existingPropTax = await prisma.financialRecord.findFirst({
+    where: { nationalId: '1234567890', type: 'PROPERTY_TAX' }
+  });
+  if (!existingPropTax) {
+    await prisma.financialRecord.create({
+      data: { nationalId: '1234567890', type: 'PROPERTY_TAX', description: 'رسوم ريع عقاري - محضر المزة 540/3', amount: 75000, isPaid: false }
+    });
+  }
+
+  const existingMortgageLoan = await prisma.financialRecord.findFirst({
+    where: { nationalId: '1234567890', type: 'MORTGAGE_LOAN' }
+  });
+  if (!existingMortgageLoan) {
+    await prisma.financialRecord.create({
+      data: { nationalId: '1234567890', type: 'MORTGAGE_LOAN', description: 'تسديد القرض العقاري - فك رهن محضر المزة 540/3', amount: 2000000, isPaid: false }
+    });
+  }
+
   // 7. Seed a vehicle for Ahmad
   await prisma.vehicle.upsert({
     where: { plateNumber: 'دمشق-123456' },
@@ -123,7 +141,72 @@ async function main() {
     }
   });
 
-  console.log('Registry and Users seeded successfully with Hashed PINs!');
+  // 8. Seed Properties
+  const prop1 = await prisma.property.upsert({
+    where: { titleDeedNumber: 'DEED-ABU-104' },
+    update: { ownerId: userAhmad.id },
+    create: {
+      titleDeedNumber: 'DEED-ABU-104',
+      cadastralZone: 'أبو رمانة',
+      parcelNumber: '104/2',
+      sizeSqm: 180,
+      shares: 2400,
+      ownerId: userAhmad.id,
+      isMortgaged: false,
+      isSeized: false
+    }
+  });
+
+  const prop2 = await prisma.property.upsert({
+    where: { titleDeedNumber: 'DEED-MEZ-540' },
+    update: { ownerId: userAhmad.id },
+    create: {
+      titleDeedNumber: 'DEED-MEZ-540',
+      cadastralZone: 'المزة',
+      parcelNumber: '540/3',
+      sizeSqm: 45,
+      shares: 1200,
+      ownerId: userAhmad.id,
+      isMortgaged: true,
+      isSeized: false
+    }
+  });
+
+  const prop3 = await prisma.property.upsert({
+    where: { titleDeedNumber: 'DEED-MAL-980' },
+    update: { ownerId: userHoda.id },
+    create: {
+      titleDeedNumber: 'DEED-MAL-980',
+      cadastralZone: 'المالكي',
+      parcelNumber: '980/1',
+      sizeSqm: 350,
+      shares: 2400,
+      ownerId: userHoda.id,
+      isMortgaged: false,
+      isSeized: true
+    }
+  });
+
+  // 9. Seed Criminal Records
+  await prisma.criminalRecord.upsert({
+    where: { nationalId: '1234567890' },
+    update: { hasCriminalRecord: false, convictions: "" },
+    create: { nationalId: '1234567890', hasCriminalRecord: false, convictions: "" }
+  });
+
+  await prisma.criminalRecord.upsert({
+    where: { nationalId: '4444444444' },
+    update: { hasCriminalRecord: false, convictions: "" },
+    create: { nationalId: '4444444444', hasCriminalRecord: false, convictions: "" }
+  });
+
+  await prisma.criminalRecord.upsert({
+    where: { nationalId: '3333333333' },
+    update: { hasCriminalRecord: true, convictions: "حكم قضائي بجرم السرقة الموصوفة لعام 2022" },
+    create: { nationalId: '3333333333', hasCriminalRecord: true, convictions: "حكم قضائي بجرم السرقة الموصوفة لعام 2022" }
+  });
+
+  console.log('Registry, Users, Properties and Criminal Records seeded successfully!');
  }
 
 main()

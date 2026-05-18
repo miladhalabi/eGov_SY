@@ -119,3 +119,95 @@ export const generateFamilyRecord = (data, outStream) => {
 
   doc.end();
 };
+
+export const generateTitleDeed = (data, outStream) => {
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  doc.pipe(outStream);
+
+  // Border
+  doc.rect(20, 20, 555, 802).lineWidth(2).stroke('#b9a779');
+
+  // Header
+  writeArabic(doc, 'الجمهورية العربية السورية', 50, 40, { size: 14, align: 'center', width: 500 });
+  writeArabic(doc, 'وزارة الإدارة المحلية والبيئة - المديرية العامة للمصالح العقارية', 50, 65, { size: 12, align: 'center', width: 500 });
+  writeArabic(doc, 'سند تمليك عقاري (بيان قيد عقاري)', 50, 100, { size: 22, align: 'center', color: '#002623', width: 500 });
+
+  const rows = [
+    { label: 'رقم سند الملكية:', value: data.titleDeedNumber },
+    { label: 'المنطقة العقارية:', value: data.cadastralZone },
+    { label: 'رقم المحضر / العقار:', value: data.parcelNumber },
+    { label: 'المساحة بالمتر المربع:', value: `${data.sizeSqm} م٢` },
+    { label: 'الأسهم المملوكة:', value: `${data.shares} / 2400 سهم (كامل الملكية تعادل 2400)` },
+    { label: 'المالك المسجل:', value: data.owner.fullName },
+    { label: 'الرقم الوطني للمالك:', value: data.owner.nationalId },
+    { label: 'إشارة الرهن:', value: data.isMortgaged ? 'يوجد إشارة رهن مسجلة لصالح المصرف التجاري' : 'خالٍ من أي إشارة رهن' },
+    { label: 'إشارة الحجز الاحتياطي:', value: data.isSeized ? 'خاضع للحجز الاحتياطي بموجب قرار قضائي' : 'خالٍ من أي إشارة حجز' },
+  ];
+
+  rows.forEach((row, i) => {
+    const y = 160 + (i * 38);
+    doc.moveTo(50, y + 28).lineTo(545, y + 28).lineWidth(0.5).stroke('#edebe0');
+    writeArabic(doc, row.label, 320, y, { size: 12, color: '#b9a779' });
+    
+    // Highlight seized or mortgaged statuses in red
+    let valColor = '#002623';
+    if (row.label.includes('إشارة') && (row.value.includes('يوجد') || row.value.includes('خاضع'))) {
+      valColor = '#CE1126';
+    }
+    writeArabic(doc, row.value, 50, y, { size: 12, width: 260, align: 'right', color: valColor });
+  });
+
+  // Stamp / QR code visual box
+  doc.rect(400, 560, 120, 120).stroke('#b9a779');
+  writeArabic(doc, 'خاتم المديرية الرقمي للتحقق الإلكتروني', 400, 690, { size: 8, align: 'center', width: 120, color: 'gray' });
+
+  // Footer
+  writeArabic(doc, 'يصدر هذا المستند إلكترونياً ويعتبر وثيقة رسمية سارية المفعول للتحقق الرقمي.', 50, 770, { size: 8, align: 'center', width: 500, color: 'gray' });
+
+  doc.end();
+};
+
+export const generateCriminalClearance = (data, outStream) => {
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  doc.pipe(outStream);
+
+  // Border (Green representing clearance / clean record)
+  doc.rect(20, 20, 555, 802).lineWidth(2).stroke('#007A33');
+
+  // Header
+  writeArabic(doc, 'الجمهورية العربية السورية', 50, 40, { size: 14, align: 'center', width: 500 });
+  writeArabic(doc, 'وزارة العدل - إدارة الأمن الجنائي والعدلي', 50, 65, { size: 12, align: 'center', width: 500 });
+  writeArabic(doc, 'وثيقة خلاصة السجل العدلي (غير محكوم)', 50, 100, { size: 22, align: 'center', color: '#007A33', width: 500 });
+
+  const rows = [
+    { label: 'الاسم الكامل:', value: data.citizen.fullName },
+    { label: 'اسم الأب:', value: data.citizen.civilRecord.fatherName },
+    { label: 'اسم الأم:', value: data.citizen.civilRecord.motherName },
+    { label: 'الرقم الوطني:', value: data.citizen.nationalId },
+    { label: 'محل وتاريخ الولادة:', value: `${data.citizen.civilRecord.birthPlace} - ${new Date(data.citizen.civilRecord.birthDate).toLocaleDateString('ar-SY')}` },
+    { label: 'الجهة الموجه إليها الوثيقة:', value: data.purpose },
+    { label: 'خلاصة السجل الجرمي والعدلي:', value: 'لا يوجد أي سوابق جرمية أو أحكام قضائية جنائية مسجلة بحقه حتى تاريخه.' },
+  ];
+
+  rows.forEach((row, i) => {
+    const y = 160 + (i * 38);
+    doc.moveTo(50, y + 28).lineTo(545, y + 28).lineWidth(0.5).stroke('#edebe0');
+    writeArabic(doc, row.label, 320, y, { size: 12, color: '#007A33' });
+    
+    // Highlight the summary in green
+    let valColor = '#002623';
+    if (row.label.includes('خلاصة')) {
+      valColor = '#007A33';
+    }
+    writeArabic(doc, row.value, 50, y, { size: 12, width: 260, align: 'right', color: valColor });
+  });
+
+  // Stamp / QR code visual box
+  doc.rect(400, 560, 120, 120).stroke('#007A33');
+  writeArabic(doc, 'بوابة الجمهورية الرقمية - خاتم السجل العدلي', 400, 690, { size: 8, align: 'center', width: 120, color: 'gray' });
+
+  // Footer
+  writeArabic(doc, 'تعتبر هذه الوثيقة صالحة لمدة ثلاثة أشهر من تاريخ صدورها وتعتمد رسمياً في جميع الدوائر الحكومية.', 50, 770, { size: 8, align: 'center', width: 500, color: 'gray' });
+
+  doc.end();
+};

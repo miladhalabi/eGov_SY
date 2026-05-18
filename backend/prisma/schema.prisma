@@ -59,6 +59,8 @@ model User {
   receivedTransfers VehicleTransfer[]          @relation("BuyerTransfers")
 
   notifications     Notification[]
+  properties        Property[]
+  criminalClearances CriminalClearanceRequest[]
 }
 
 model Notification {
@@ -197,4 +199,35 @@ model BankTransaction {
   receiverNationalId String
   amount            Float
   createdAt         DateTime @default(now())
+}
+
+model Property {
+  id              String   @id @default(uuid())
+  titleDeedNumber String   @unique // رقم سند التمليك
+  cadastralZone   String   // المنطقة العقارية (مثلاً: المزة، أبو رمانة، المالكي)
+  parcelNumber    String   // رقم المحضر
+  sizeSqm         Float    // المساحة بالمتر المربع
+  shares          Int      @default(2400) // الأسهم (كامل الملكية = 2400 سهم)
+  ownerId         String
+  owner           User     @relation(fields: [ownerId], references: [id])
+  isMortgaged     Boolean  @default(false) // إشارة الرهن
+  isSeized        Boolean  @default(false) // إشارة الحجز الاحتياطي
+  createdAt       DateTime @default(now())
+}
+
+model CriminalRecord {
+  id                String   @id @default(uuid())
+  nationalId        String   @unique
+  hasCriminalRecord Boolean  @default(false)
+  convictions       String   @default("") // تفاصيل الجرم والسوابق إن وجدت
+}
+
+model CriminalClearanceRequest {
+  id              String             @id @default(uuid())
+  citizenId       String
+  citizen         User               @relation(fields: [citizenId], references: [id])
+  purpose         String             // الجهة الموجه إليها (مثلاً: وزارة التربية)
+  status          RegistrationStatus @default(PENDING) // PENDING, APPROVED, REJECTED
+  rejectionReason String?
+  createdAt       DateTime           @default(now())
 }

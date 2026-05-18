@@ -64,6 +64,14 @@ export const payRecord = async (req, res) => {
       data: { isPaid: true }
     });
 
+    // If this is a mortgage payoff loan, release the mortgage on the user's properties
+    if (record.type === 'MORTGAGE_LOAN') {
+      await prisma.property.updateMany({
+        where: { owner: { nationalId }, isMortgaged: true },
+        data: { isMortgaged: false }
+      });
+    }
+
     res.json({ message: 'تم تسديد الذمة المالية بنجاح وتحديث السجل' });
   } catch (e) {
     console.error(e);

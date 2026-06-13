@@ -10,18 +10,88 @@ const __dirname = dirname(__filename);
 
 const fontPath = path.join(__dirname, '../assets/fonts/GESS.otf');
 
+const drawFinderPattern = (doc, x, y, p) => {
+  doc.rect(x, y, 7 * p, 7 * p).fill('black');
+  doc.rect(x + p, y + p, 5 * p, 5 * p).fill('white');
+  doc.rect(x + 2 * p, y + 2 * p, 3 * p, 3 * p).fill('black');
+};
+
+export const drawQRCode = (doc, x, y, size = 120) => {
+  const gridSize = 25;
+  const p = size / gridSize;
+
+  // Background
+  doc.rect(x, y, size, size).fill('white');
+
+  // Finders
+  drawFinderPattern(doc, x, y, p);
+  drawFinderPattern(doc, x + (gridSize - 7) * p, y, p);
+  drawFinderPattern(doc, x, y + (gridSize - 7) * p, p);
+
+  // Alignment
+  const alX = x + 16 * p;
+  const alY = y + 16 * p;
+  doc.rect(alX, alY, 5 * p, 5 * p).fill('black');
+  doc.rect(alX + p, alY + p, 3 * p, 3 * p).fill('white');
+  doc.rect(alX + 2 * p, alY + 2 * p, p, p).fill('black');
+
+  // Timing patterns
+  for (let i = 8; i < gridSize - 7; i++) {
+    if (i % 2 === 0) {
+      doc.rect(x + 6 * p, y + i * p, p, p).fill('black');
+      doc.rect(x + i * p, y + 6 * p, p, p).fill('black');
+    }
+  }
+
+  // Random pixels (deterministic)
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
+      if (r < 8 && c < 8) continue;
+      if (r < 8 && c >= gridSize - 8) continue;
+      if (r >= gridSize - 8 && c < 8) continue;
+      if (r >= 15 && r < 22 && c >= 15 && c < 22) continue;
+      if (c === 6 || r === 6) continue;
+
+      const hash = Math.sin(r * 12.9898 + c * 78.233) * 43758.5453;
+      const randVal = hash - Math.floor(hash);
+      if (randVal > 0.5) {
+        doc.rect(x + c * p, y + r * p, p, p).fill('black');
+      }
+    }
+  }
+};
+
 // Helper to handle Arabic using rtl-arabic and GESS font
 const writeArabic = (doc, text, x, y, options = {}) => {
-  const processedText = new RTLArabic(text || '').toString();
+  const hasArabic = /[\u0600-\u06FF]/.test(text);
+  let processedText = text || '';
 
-  doc.font(fontPath)
-     .fontSize(options.size || 12)
-     .fillColor(options.color || 'black')
-     .text(processedText, x, y, { 
-       width: options.width, 
-       align: options.align || 'right',
-       features: ['rtla'] 
-     });
+  if (hasArabic) {
+    processedText = new RTLArabic(text).toString();
+    // Swap parenthesis characters to fix double-reversal layout bug in PDFKit RTLA
+    processedText = processedText
+      .replace(/\(/g, '___OPEN___')
+      .replace(/\)/g, '(')
+      .replace(/___OPEN___/g, ')');
+
+    doc.font(fontPath)
+       .fontSize(options.size || 12)
+       .fillColor(options.color || 'black')
+       .text(processedText, x, y, { 
+         width: options.width, 
+         align: options.align || 'right',
+         features: ['rtla'] 
+       });
+  } else {
+    // Pure English/Numeric text: draw LTR using built-in Helvetica to prevent layout/inversion bugs!
+    doc.font('Helvetica')
+       .fontSize(options.size || 12)
+       .fillColor(options.color || 'black')
+       .text(processedText, x, y, { 
+         width: options.width, 
+         align: options.align || 'right'
+       });
+  }
 };
 
 export const generateIndividualRecord = (data, outStream) => {
@@ -42,7 +112,8 @@ export const generateIndividualRecord = (data, outStream) => {
     { label: 'الاسم الكامل:', value: data.fullName },
     { label: 'اسم الأب:', value: data.fatherName },
     { label: 'اسم الأم:', value: data.motherName },
-    { label: 'محل وتاريخ الولادة:', value: `${data.birthPlace} - ${new Date(data.birthDate).toLocaleDateString('ar-SY')}` },
+    { label: 'مكان الولادة:', value: data.birthPlace },
+    { label: 'تاريخ الولادة:', value: new Date(data.birthDate).toLocaleDateString('en-GB') },
     { label: 'الجنس:', value: data.gender === 'MALE' ? 'ذكر' : 'أنثى' },
     { label: 'الحالة العائلية:', value: data.maritalStatus },
     { label: 'الوضع الحالي:', value: data.livingStatus },
@@ -54,6 +125,10 @@ export const generateIndividualRecord = (data, outStream) => {
     writeArabic(doc, row.label, 350, y, { size: 14, color: '#b9a779' });
     writeArabic(doc, row.value, 50, y, { size: 14, width: 280, align: 'right', color: '#002623' });
   });
+
+  doc.rect(400, 560, 120, 120).stroke('#b9a779');
+  drawQRCode(doc, 400, 560, 120);
+  writeArabic(doc, 'الختم المدني الرقمي للتحقق', 400, 690, { size: 8, align: 'center', width: 120, color: 'gray' });
 
   doc.end();
 };
@@ -109,12 +184,16 @@ export const generateFamilyRecord = (data, outStream) => {
     writeArabic(doc, child.fullName, 400, currentY, { size: 11, width: 100 });
     writeArabic(doc, child.nationalId, 250, currentY, { size: 11, width: 100 });
     writeArabic(doc, child.gender === 'MALE' ? 'ذكر' : 'أنثى', 150, currentY, { size: 11, width: 80 });
-    writeArabic(doc, new Date(child.birthDate).toLocaleDateString('ar-SY'), 50, currentY, { size: 11, width: 100 });
+    writeArabic(doc, new Date(child.birthDate).toLocaleDateString('en-GB'), 50, currentY, { size: 11, width: 100 });
     doc.moveTo(50, currentY + 18).lineTo(545, currentY + 18).lineWidth(0.5).stroke('#edebe0');
     currentY += 25;
   });
 
   // Footer
+  doc.rect(400, 560, 120, 120).stroke('#b9a779');
+  drawQRCode(doc, 400, 560, 120);
+  writeArabic(doc, 'الختم المدني الرقمي للتحقق', 400, 690, { size: 8, align: 'center', width: 120, color: 'gray' });
+
   writeArabic(doc, 'يعتبر هذا المستند خلاصة رسمية للسجل المدني للعائلة.', 50, 770, { size: 8, align: 'center', width: 500, color: 'gray' });
 
   doc.end();
@@ -136,8 +215,9 @@ export const generateTitleDeed = (data, outStream) => {
     { label: 'رقم سند الملكية:', value: data.titleDeedNumber },
     { label: 'المنطقة العقارية:', value: data.cadastralZone },
     { label: 'رقم المحضر / العقار:', value: data.parcelNumber },
-    { label: 'المساحة بالمتر المربع:', value: `${data.sizeSqm} م٢` },
-    { label: 'الأسهم المملوكة:', value: `${data.shares} / 2400 سهم (كامل الملكية تعادل 2400)` },
+    { label: 'المساحة بالمتر المربع:', value: String(data.sizeSqm) },
+    { label: 'الأسهم المملوكة للمكلف:', value: String(data.shares) },
+    { label: 'إجمالي أسهم العقار الكاملة:', value: '2400' },
     { label: 'المالك المسجل:', value: data.owner.fullName },
     { label: 'الرقم الوطني للمالك:', value: data.owner.nationalId },
     { label: 'إشارة الرهن:', value: data.isMortgaged ? 'يوجد إشارة رهن مسجلة لصالح المصرف التجاري' : 'خالٍ من أي إشارة رهن' },
@@ -159,6 +239,7 @@ export const generateTitleDeed = (data, outStream) => {
 
   // Stamp / QR code visual box
   doc.rect(400, 560, 120, 120).stroke('#b9a779');
+  drawQRCode(doc, 400, 560, 120);
   writeArabic(doc, 'خاتم المديرية الرقمي للتحقق الإلكتروني', 400, 690, { size: 8, align: 'center', width: 120, color: 'gray' });
 
   // Footer
@@ -184,7 +265,8 @@ export const generateCriminalClearance = (data, outStream) => {
     { label: 'اسم الأب:', value: data.citizen.civilRecord.fatherName },
     { label: 'اسم الأم:', value: data.citizen.civilRecord.motherName },
     { label: 'الرقم الوطني:', value: data.citizen.nationalId },
-    { label: 'محل وتاريخ الولادة:', value: `${data.citizen.civilRecord.birthPlace} - ${new Date(data.citizen.civilRecord.birthDate).toLocaleDateString('ar-SY')}` },
+    { label: 'مكان الولادة:', value: data.citizen.civilRecord.birthPlace },
+    { label: 'تاريخ الولادة:', value: new Date(data.citizen.civilRecord.birthDate).toLocaleDateString('en-GB') },
     { label: 'الجهة الموجه إليها الوثيقة:', value: data.purpose },
     { label: 'خلاصة السجل الجرمي والعدلي:', value: 'لا يوجد أي سوابق جرمية أو أحكام قضائية جنائية مسجلة بحقه حتى تاريخه.' },
   ];
@@ -204,6 +286,7 @@ export const generateCriminalClearance = (data, outStream) => {
 
   // Stamp / QR code visual box
   doc.rect(400, 560, 120, 120).stroke('#007A33');
+  drawQRCode(doc, 400, 560, 120);
   writeArabic(doc, 'بوابة الجمهورية الرقمية - خاتم السجل العدلي', 400, 690, { size: 8, align: 'center', width: 120, color: 'gray' });
 
   // Footer

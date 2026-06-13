@@ -131,12 +131,13 @@ async function main() {
   await prisma.vehicle.upsert({
     where: { plateNumber: 'دمشق-123456' },
     update: {
-      ownerId: userAhmad.id
+      ownerId: userAhmad.id,
+      year: 2022
     },
     create: {
       plateNumber: 'دمشق-123456',
       model: 'كيا سيراتو',
-      year: 2020,
+      year: 2022,
       ownerId: userAhmad.id
     }
   });
